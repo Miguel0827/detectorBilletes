@@ -568,12 +568,29 @@
         }
 
         async function cambiarCamara() {
-            if (camarasDisponibles.length <= 1) return;
-            camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
-            if (stream) {
-                detenerCamara();
-                setTimeout(() => iniciarCamara(), 300);
+            if (camarasDisponibles.length <= 1) {
+                console.log('Solo hay una cámara');
+                return;
             }
+            
+            console.log('🔄 Cambiando cámara...');
+            
+            // Detener cámara actual
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                deteccionActiva = false;
+                procesando = false;
+            }
+            
+            // Siguiente cámara
+            camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
+            console.log('📹 Usando cámara', camaraActualIndex + 1, 'de', camarasDisponibles.length);
+            
+            // Pequeña pausa antes de reiniciar
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Reiniciar con nueva cámara
+            await iniciarCamara();
         }
 
         function detenerCamara() {
