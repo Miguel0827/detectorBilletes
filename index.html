@@ -1,78 +1,4 @@
-function postprocesarResultados(outputData, imgWidth, imgHeight) {
-            const detecciones = [];
-            const numClases = CLASS_NAMES.length;
-            const totalElements = outputData.length;
-            const numPredictions = Math.floor(totalElements / (4 + numClases));
-            
-            // Pre-calcular factores de escala
-            const scaleX = imgWidth / INPUT_SIZE;
-            const scaleY = imgHeight / INPUT_SIZE;
-            
-            // Solo en primera ejecución
-            if (!window.diagnosticoDone) {
-                console.log('🔍 DEBUG:', {
-                    totalElements,
-                    numClases,
-                    numPredictions,
-                    expectedSize: (4 + numClases) * numPredictions
-                });
-                window.diagnosticoDone = true;
-            }
-            
-            for (let i = 0; i < numPredictions; i++) {
-                const xCenter = outputData[i];
-                const yCenter = outputData[numPredictions + i];
-                const width = outputData[numPredictions * 2 + i];
-                const height = outputData[numPredictions * 3 + i];
-                
-                // Buscar clase con mayor confianza
-                let maxScore = 0;
-                let maxClassId = 0;
-                
-                for (let c = 0; c < numClases; c++) {
-                    const scoreIndex = numPredictions * (4 + c) + i;
-                    const score = outputData[scoreIndex];
-                    
-                    if (score > maxScore) {
-                        maxScore = score;
-                        maxClassId = c;
-                    }
-                }
-                
-                // Filtrar por confianza
-                if (maxScore > CONF_THRESHOLD) {
-                    // Convertir coordenadas normalizadas a píxeles
-                    const x1 = Math.max(0, (xCenter - width / 2) * scaleX);
-                    const y1 = Math.max(0, (yCenter - height / 2) * scaleY);
-                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * scaleX);
-                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * scaleY);
-                    
-                    detecciones.push({
-                        class: CLASS_NAMES[maxClassId],
-                        conf: maxScore,
-                        bbox: [x1, y1, x2, y2]
-                    });
-                    
-                    console.log(`✅ ${CLASS_NAMES[maxClassId]}: ${(maxScore*100).toFixed(1)}%`);
-                }
-            }
-            
-            console.log(`📊 Detecciones válidas: ${detecciones.length}/${numPredictions}`);
-            return detecciones;
-        }                
-                console.log('✅ Stream obtenido');
-                video.srcObject = stream;
-                
-                // Forzar reproducción en móviles
-                video.play().catch(err => {
-                    console.warn('⚠️ Error al reproducir video:', err);
-                });
-                
-                video.onloadedmetadata = function() {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    console.log('✅ Cámara iniciada:', video.videoWidth, 'x', video.<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -218,33 +144,37 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             font-size: 12px;
         }
 
-        .desglose {
-            background: rgba(0, 0, 0, 0.5);
+        .detecciones-actuales {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid rgba(0, 255, 136, 0.3);
             border-radius: 10px;
             padding: 12px;
             margin-bottom: 10px;
-            min-height: 70px;
-            max-height: 150px;
-            overflow-y: auto;
+            min-height: 60px;
         }
 
-        .desglose-item {
+        .detecciones-actuales h3 {
+            font-size: 14px;
+            color: #00ff88;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 13px;
+            align-items: center;
         }
 
-        .desglose-item:last-child {
-            border-bottom: none;
+        .badge-temp {
+            background: rgba(0, 255, 136, 0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: normal;
         }
 
         .historial {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
             padding: 12px;
-            max-height: 150px;
+            max-height: 250px;
             overflow-y: auto;
             margin-bottom: 10px;
         }
@@ -252,14 +182,69 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         .historial h3 {
             margin-bottom: 8px;
             font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .historial-item {
             background: rgba(255, 255, 255, 0.05);
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 6px;
-            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .historial-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .historial-item-info {
+            flex: 1;
+        }
+
+        .historial-item-valor {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 4px;
+        }
+
+        .historial-item-fecha {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .btn-eliminar {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-eliminar:hover {
+            background: rgba(255, 68, 68, 0.4);
+        }
+
+        .deteccion-temp-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .deteccion-temp-item:last-child {
+            border-bottom: none;
         }
 
         .buttons {
@@ -360,13 +345,24 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             </div>
         </div>
 
-        <div class="desglose" id="desglose">
-            <p style="text-align: center; color: #888; font-size: 13px;">Sin detecciones</p>
+        <div class="detecciones-actuales">
+            <h3>
+                🔍 Detección Actual
+                <span class="badge-temp">Temporal</span>
+            </h3>
+            <div id="desglose">
+                <p style="text-align: center; color: #888; font-size: 13px;">Sin detecciones</p>
+            </div>
         </div>
 
         <div class="historial">
-            <h3>📋 Historial</h3>
-            <div id="historial-list"></div>
+            <h3>
+                💰 Historial de Conteo
+                <span style="font-size: 12px; font-weight: normal; color: #888;">Total: <span id="total-historial" style="color: #00ff88;">$0</span></span>
+            </h3>
+            <div id="historial-list">
+                <p style="text-align:center;color:#888;font-size:12px;">Sin registros guardados</p>
+            </div>
         </div>
 
         <div class="buttons">
@@ -376,11 +372,14 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             <button class="btn-start" style="background: linear-gradient(135deg, #ff9500, #ff5e00);" onclick="probarConImagen()">
                 🖼️ PROBAR CON IMAGEN
             </button>
-            <button class="btn-save" onclick="guardarConteo()">💾 GUARDAR</button>
-            <button class="btn-clear" onclick="limpiarTodo()">🗑️ LIMPIAR</button>
+            <button class="btn-save" onclick="guardarDeteccionActual()">
+                💾 GUARDAR DETECCIÓN
+            </button>
+            <button class="btn-clear" onclick="limpiarHistorial()">
+                🗑️ LIMPIAR TODO
+            </button>
         </div>
 
-        <!-- Input oculto para cargar imagen -->
         <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="procesarImagen(this)">
     </div>
 
@@ -404,9 +403,9 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             "50000": 50000
         };
 
-        let CONF_THRESHOLD = 0.5;  // Reducido de 0.6 a 0.5 (50%)
-        const IOU_THRESHOLD = 0.5;  // Reducido para evitar suprimir detecciones válidas
-        const INPUT_SIZE = 640;  // DEBE ser 640 (igual que el entrenamiento)
+        let CONF_THRESHOLD = 0.5;
+        const IOU_THRESHOLD = 0.5;
+        const INPUT_SIZE = 640;
 
         let video, canvas, ctx;
         let stream = null;
@@ -417,7 +416,7 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         let session = null;
         let camarasDisponibles = [];
         let camaraActualIndex = 0;
-        let deteccionInterval = 4000; // Aumentado a 4 segundos por defecto (mejor para móviles)
+        let deteccionInterval = 4000;
         let procesando = false;
 
         if ('serviceWorker' in navigator) {
@@ -451,6 +450,10 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             }
         }
 
+        function calcularTotalHistorial() {
+            return historial.reduce((sum, item) => sum + item.total, 0);
+        }
+
         window.onload = async function() {
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
@@ -458,18 +461,15 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             
             cargarHistorial();
             
-            // 🔍 Detectar navegadores problemáticos
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             let navegadorProblematico = false;
             let mensajeNavegador = '';
             
-            // Detectar navegadores in-app
             if (/FBAN|FBAV|Instagram|Line|Snapchat|Twitter|WhatsApp/i.test(userAgent)) {
                 navegadorProblematico = true;
                 mensajeNavegador = '⚠️ Navegador in-app detectado. Abre en Chrome/Safari';
             }
             
-            // Detectar iOS + no Safari
             const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
             const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
             
@@ -491,25 +491,24 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 
                 session = await ort.InferenceSession.create('models/best.onnx');
                 
-                // 🔍 DIAGNOSTICO COMPLETO DEL MODELO
-                console.log('═══════════════════════════════════════');
+                console.log('╔═══════════════════════════════════════╗');
                 console.log('✅ MODELO CARGADO EXITOSAMENTE');
-                console.log('═══════════════════════════════════════');
-                console.log('📥 Input name:', session.inputNames[0]);
+                console.log('╚═══════════════════════════════════════╝');
+                console.log('🔥 Input name:', session.inputNames[0]);
                 console.log('📤 Output name:', session.outputNames[0]);
                 console.log('🎯 Clases configuradas:', CLASS_NAMES.length);
                 console.log('📋 Lista de clases:', CLASS_NAMES);
                 console.log('💰 Valores:', VALORES);
                 console.log('🌐 User Agent:', userAgent);
                 console.log('📱 iOS:', isIOS, '| Safari:', isSafari);
-                console.log('═══════════════════════════════════════');
+                console.log('╚═══════════════════════════════════════╝');
                 
                 if (!navegadorProblematico) {
                     document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
                 }
             } catch (error) {
                 console.error('❌ ERROR CARGANDO MODELO:', error);
-                console.log('📁 Verifica que existe: models/best.onnx');
+                console.log('🔍 Verifica que existe: models/best.onnx');
                 console.log('🌐 Ruta completa debería ser:', window.location.origin + '/models/best.onnx');
                 document.getElementById('status').innerHTML = 
                     '<div class="error">⚠️ Modelo no encontrado en /models/best.onnx</div>';
@@ -534,7 +533,6 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 return;
             }
 
-            // Verificar si estamos en HTTPS
             const esHTTPS = window.location.protocol === 'https:';
             const esLocalhost = window.location.hostname === 'localhost' || 
                                window.location.hostname === '127.0.0.1';
@@ -543,7 +541,7 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 document.getElementById('status').innerHTML = 
                     '<div class="error">⚠️ HTTPS requerido para cámara. Usa el botón "PROBAR CON IMAGEN"</div>';
                 console.error('❌ Acceso a cámara bloqueado: se requiere HTTPS');
-                console.log('📍 URL actual:', window.location.href);
+                console.log('🔍 URL actual:', window.location.href);
                 console.log('💡 Solución: Accede via HTTPS o usa localhost');
                 return;
             }
@@ -553,35 +551,30 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 document.getElementById('btnStart').disabled = true;
                 
                 console.log('🔄 Iniciando solicitud de cámara...');
-                console.log('📍 Protocolo:', window.location.protocol);
-                console.log('📍 Host:', window.location.hostname);
+                console.log('🔍 Protocolo:', window.location.protocol);
+                console.log('🔍 Host:', window.location.hostname);
 
-                // Verificar disponibilidad de getUserMedia
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     throw new Error('Tu navegador no soporta acceso a la cámara');
                 }
 
-                // Detectar Android para usar constraints optimizadas
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 
                 let constraints = {
                     video: {
-                        facingMode: { ideal: 'environment' }  // Cámara trasera preferida
+                        facingMode: { ideal: 'environment' }
                     }
                 };
 
-                // En Android, agregar constraints de calidad media
                 if (isAndroid) {
                     constraints.video.width = { ideal: 1280 };
                     constraints.video.height = { ideal: 720 };
                     console.log('📱 Modo Android detectado');
                 } else {
-                    // En desktop, permitir mayor flexibilidad
                     constraints.video.width = { ideal: 1280 };
                     constraints.video.height = { ideal: 720 };
                 }
 
-                // Si hay cámaras disponibles Y estamos en desktop, usar la seleccionada
                 if (camarasDisponibles.length > 0 && !isAndroid) {
                     const camara = camarasDisponibles[camaraActualIndex];
                     constraints.video.deviceId = { ideal: camara.deviceId };
@@ -590,14 +583,12 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
 
                 console.log('🎥 Solicitando acceso con constraints:', constraints);
                 
-                // Timeout de 15 segundos (Android a veces tarda más)
                 const timeoutPromise = new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Timeout: Sin respuesta del usuario (15s)')), 15000)
                 );
                 
                 console.log('⏳ Esperando permisos del usuario...');
                 
-                // Intentar primero con constraints ideales
                 try {
                     stream = await Promise.race([
                         navigator.mediaDevices.getUserMedia(constraints),
@@ -605,27 +596,29 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                     ]);
                     console.log('✅ Stream obtenido con constraints ideales');
                 } catch (constraintError) {
-                    // Si falla, intentar con constraints mínimas (fallback)
                     if (constraintError.name === 'OverconstrainedError' || 
                         constraintError.message.includes('Timeout')) {
                         console.warn('⚠️ Primer intento falló, probando modo básico...');
                         
                         const basicConstraints = {
-                            video: true  // Más básico posible
+                            video: true
                         };
                         
                         stream = await navigator.mediaDevices.getUserMedia(basicConstraints);
                         console.log('✅ Stream obtenido con constraints básicas');
                     } else {
-                        throw constraintError; // Re-lanzar si es otro error
+                        throw constraintError;
                     }
                 }
                 
                 console.log('✅ Stream obtenido, configurando video...');
                 console.log('📹 Tracks activos:', stream.getVideoTracks().length);
                 
-                console.log('✅ Stream obtenido');
                 video.srcObject = stream;
+                
+                video.play().catch(err => {
+                    console.warn('⚠️ Error al reproducir video:', err);
+                });
                 
                 video.onloadedmetadata = function() {
                     canvas.width = video.videoWidth;
@@ -675,15 +668,15 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                     `<div class="error">${mensaje}<br><small>${sugerencia}</small></div>`;
                 document.getElementById('btnStart').disabled = false;
                 
-                console.log('═══════════════════════════════════════');
+                console.log('╔═══════════════════════════════════════╗');
                 console.log('❌ DIAGNÓSTICO DE ERROR');
-                console.log('═══════════════════════════════════════');
+                console.log('╚═══════════════════════════════════════╝');
                 console.log('Error:', error.name);
                 console.log('Mensaje:', error.message);
                 console.log('HTTPS:', esHTTPS);
                 console.log('Localhost:', esLocalhost);
                 console.log('UserAgent:', navigator.userAgent);
-                console.log('═══════════════════════════════════════');
+                console.log('╚═══════════════════════════════════════╝');
             }
         }
 
@@ -711,16 +704,6 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             }
         }
 
-        function iniciarDeteccion() {
-            document.getElementById('status').textContent = '✅ Detectando';
-            document.getElementById('btnStart').textContent = '🛑 DETENER';
-            document.getElementById('btnStart').onclick = detenerCamara;
-            document.getElementById('btnStart').disabled = false;
-            
-            deteccionActiva = true;
-            detectarConONNX();
-        }
-
         async function detectarConONNX() {
             if (!deteccionActiva || !session || procesando) {
                 if (deteccionActiva) {
@@ -731,7 +714,6 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
 
             procesando = true;
             
-            // Indicador visual de procesamiento
             document.getElementById('status').textContent = '🔄 Analizando...';
 
             try {
@@ -745,20 +727,19 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 const output = results[session.outputNames[0]];
                 const outputData = output.data;
                 
-                // 🔍 DIAGNOSTICO (solo primera vez)
                 if (!window.diagnosticoDone2) {
-                    console.log('═══════════════════════════════════════');
+                    console.log('╔═══════════════════════════════════════╗');
                     console.log('🔍 DIAGNÓSTICO DEL MODELO ONNX');
-                    console.log('═══════════════════════════════════════');
+                    console.log('╚═══════════════════════════════════════╝');
                     console.log('📊 Shape output:', output.dims);
-                    console.log('📏 Total elementos:', outputData.length);
+                    console.log('🔢 Total elementos:', outputData.length);
                     console.log('🎯 Clases esperadas:', CLASS_NAMES.length);
-                    console.log('📐 Input size:', INPUT_SIZE);
+                    console.log('🔍 Input size:', INPUT_SIZE);
                     
                     const numClases = CLASS_NAMES.length;
                     const numPreds = Math.floor(outputData.length / (4 + numClases));
                     console.log('🔢 Predicciones calculadas:', numPreds);
-                    console.log('═══════════════════════════════════════');
+                    console.log('╚═══════════════════════════════════════╝');
                     
                     window.diagnosticoDone2 = true;
                 }
@@ -795,12 +776,11 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             tempCanvas.height = INPUT_SIZE;
             const tempCtx = tempCanvas.getContext('2d', { 
                 willReadFrequently: true,
-                alpha: false  // No necesitamos canal alpha
+                alpha: false
             });
             
-            // Usar interpolación más rápida
             tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'low';  // 'low' es más rápido
+            tempCtx.imageSmoothingQuality = 'low';
             
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
@@ -809,12 +789,11 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
             const pixelCount = INPUT_SIZE * INPUT_SIZE;
             
-            // Optimización: un solo loop
             for (let i = 0; i < pixelCount; i++) {
                 const idx = i * 4;
-                input[i] = data[idx] / 255.0;                    // R
-                input[pixelCount + i] = data[idx + 1] / 255.0;  // G
-                input[pixelCount * 2 + i] = data[idx + 2] / 255.0;  // B
+                input[i] = data[idx] / 255.0;
+                input[pixelCount + i] = data[idx + 1] / 255.0;
+                input[pixelCount * 2 + i] = data[idx + 2] / 255.0;
             }
             
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
@@ -823,28 +802,28 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const detecciones = [];
             const numClases = CLASS_NAMES.length;
-            
-            // YOLOv11 ONNX formato: [1, 4+nc, num_predictions]
-            // Calcular número de predicciones
             const totalElements = outputData.length;
             const numPredictions = Math.floor(totalElements / (4 + numClases));
             
-            console.log('🔍 DEBUG:', {
-                totalElements,
-                numClases,
-                numPredictions,
-                expectedSize: (4 + numClases) * numPredictions
-            });
+            const scaleX = imgWidth / INPUT_SIZE;
+            const scaleY = imgHeight / INPUT_SIZE;
+            
+            if (!window.diagnosticoDone) {
+                console.log('🔍 DEBUG:', {
+                    totalElements,
+                    numClases,
+                    numPredictions,
+                    expectedSize: (4 + numClases) * numPredictions
+                });
+                window.diagnosticoDone = true;
+            }
             
             for (let i = 0; i < numPredictions; i++) {
-                // YOLOv11: las coordenadas están en las primeras 4 filas
-                // outputData está organizado como: [x0, x1, x2, ..., y0, y1, y2, ..., w0, w1, ...]
-                const xCenter = outputData[i];                          // Fila 0
-                const yCenter = outputData[numPredictions + i];         // Fila 1
-                const width = outputData[numPredictions * 2 + i];       // Fila 2
-                const height = outputData[numPredictions * 3 + i];      // Fila 3
+                const xCenter = outputData[i];
+                const yCenter = outputData[numPredictions + i];
+                const width = outputData[numPredictions * 2 + i];
+                const height = outputData[numPredictions * 3 + i];
                 
-                // Las probabilidades de clase empiezan en la fila 4
                 let maxScore = 0;
                 let maxClassId = 0;
                 
@@ -858,14 +837,11 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                     }
                 }
                 
-                // Filtrar por confianza
                 if (maxScore > CONF_THRESHOLD) {
-                    // YOLOv11 devuelve coordenadas normalizadas (0-1) relativas a INPUT_SIZE
-                    // Convertir a píxeles del canvas
-                    const x1 = Math.max(0, (xCenter - width / 2) * imgWidth / INPUT_SIZE);
-                    const y1 = Math.max(0, (yCenter - height / 2) * imgHeight / INPUT_SIZE);
-                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * imgWidth / INPUT_SIZE);
-                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * imgHeight / INPUT_SIZE);
+                    const x1 = Math.max(0, (xCenter - width / 2) * scaleX);
+                    const y1 = Math.max(0, (yCenter - height / 2) * scaleY);
+                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * scaleX);
+                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * scaleY);
                     
                     detecciones.push({
                         class: CLASS_NAMES[maxClassId],
@@ -945,7 +921,7 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 totalActual += VALORES[billete] * cantidad;
             }
 
-            document.getElementById('total').textContent = `$${totalActual.toLocaleString()}`;
+            document.getElementById('total').textContent = `${totalActual.toLocaleString()}`;
 
             const desgloseDiv = document.getElementById('desglose');
             if (Object.keys(deteccionesActuales).length === 0) {
@@ -955,33 +931,54 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
                     const subtotal = VALORES[billete] * cantidad;
                     html += `
-                        <div class="desglose-item">
-                            <span>${cantidad}x $${billete}</span>
-                            <span style="color:#00ff88;font-weight:bold;">$${subtotal.toLocaleString()}</span>
+                        <div class="deteccion-temp-item">
+                            <span>${cantidad}x ${billete}</span>
+                            <span style="color:#00ff88;font-weight:bold;">${subtotal.toLocaleString()}</span>
                         </div>`;
                 }
                 desgloseDiv.innerHTML = html;
             }
+
+            const totalHistorial = calcularTotalHistorial();
+            document.getElementById('total-historial').textContent = `${totalHistorial.toLocaleString()}`;
         }
 
-        function guardarConteo() {
-            if (totalActual === 0) {
-                alert('⚠️ No hay nada que guardar');
+        function guardarDeteccionActual() {
+            if (totalActual === 0 || Object.keys(deteccionesActuales).length === 0) {
+                alert('⚠️ No hay detecciones para guardar');
                 return;
             }
 
             const registro = {
+                id: Date.now(),
                 timestamp: new Date().toLocaleString(),
                 total: totalActual,
                 desglose: {...deteccionesActuales}
             };
 
             historial.unshift(registro);
-            if (historial.length > 50) historial = historial.slice(0, 50);
             localStorage.setItem('historial_billetes', JSON.stringify(historial));
+            
+            deteccionesActuales = {};
+            totalActual = 0;
+            
+            actualizarDisplay();
             actualizarHistorialUI();
 
-            document.getElementById('status').textContent = '✅ Guardado';
+            document.getElementById('status').textContent = '✅ Guardado en historial';
+            setTimeout(() => {
+                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
+            }, 1500);
+        }
+
+        function eliminarDelHistorial(id) {
+            if (!confirm('¿Eliminar este registro?')) return;
+            
+            historial = historial.filter(item => item.id !== id);
+            localStorage.setItem('historial_billetes', JSON.stringify(historial));
+            actualizarHistorialUI();
+            
+            document.getElementById('status').textContent = '🗑️ Registro eliminado';
             setTimeout(() => {
                 if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
             }, 1500);
@@ -989,37 +986,53 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
 
         function actualizarHistorialUI() {
             const list = document.getElementById('historial-list');
+            const totalHistorial = calcularTotalHistorial();
+            document.getElementById('total-historial').textContent = `${totalHistorial.toLocaleString()}`;
+
             if (historial.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Sin registros</p>';
+                list.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Sin registros guardados</p>';
                 return;
             }
 
             let html = '';
-            for (let reg of historial.slice(0, 8)) {
-                const desglose = Object.entries(reg.desglose).map(([b, c]) => `${c}x$${b}`).join(', ');
+            for (let reg of historial) {
+                const desglose = Object.entries(reg.desglose)
+                    .map(([b, c]) => `${c}x${b}`)
+                    .join(', ');
+                
                 html += `
                     <div class="historial-item">
-                        <strong>$${reg.total.toLocaleString()}</strong><br>
-                        <small>${desglose}</small><br>
-                        <small style="color:#888;">${reg.timestamp}</small>
+                        <div class="historial-item-info">
+                            <div class="historial-item-valor">${reg.total.toLocaleString()}</div>
+                            <div style="font-size: 12px; color: #ccc; margin-bottom: 3px;">${desglose}</div>
+                            <div class="historial-item-fecha">${reg.timestamp}</div>
+                        </div>
+                        <button class="btn-eliminar" onclick="eliminarDelHistorial(${reg.id})">
+                            🗑️ Eliminar
+                        </button>
                     </div>`;
             }
             list.innerHTML = html;
         }
 
-        function limpiarTodo() {
-            if (confirm('¿Limpiar historial?')) {
-                deteccionesActuales = {};
-                totalActual = 0;
+        function limpiarHistorial() {
+            if (historial.length === 0) {
+                alert('⚠️ El historial ya está vacío');
+                return;
+            }
+
+            if (confirm('¿Limpiar TODO el historial? Esta acción no se puede deshacer.')) {
                 historial = [];
                 localStorage.removeItem('historial_billetes');
-                actualizarDisplay();
                 actualizarHistorialUI();
-                document.getElementById('status').textContent = '🗑️ Limpiado';
+                document.getElementById('status').textContent = '🗑️ Historial limpiado';
+                
+                setTimeout(() => {
+                    if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
+                }, 1500);
             }
         }
 
-        // 🖼️ FUNCIONES PARA PROBAR CON IMAGEN
         function probarConImagen() {
             if (!session) {
                 alert('⚠️ Modelo no cargado');
@@ -1036,14 +1049,11 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             
             const img = new Image();
             img.onload = async function() {
-                // Detener cámara si está activa
                 if (stream) detenerCamara();
                 
-                // Ajustar canvas al tamaño de la imagen
                 canvas.width = img.width;
                 canvas.height = img.height;
                 
-                // Dibujar imagen en el video (para visualización)
                 const videoCtx = canvas.getContext('2d');
                 videoCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
@@ -1051,25 +1061,21 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                     console.log('🔍 Iniciando detección en imagen...');
                     document.getElementById('status').textContent = '🔍 Analizando...';
                     
-                    // Preprocesar imagen
                     const input = preprocesarImagenStatic(img);
                     const feeds = {};
                     feeds[session.inputNames[0]] = input;
                     
-                    // Ejecutar modelo
                     const results = await session.run(feeds);
                     const output = results[session.outputNames[0]];
                     const outputData = output.data;
                     
                     console.log('📊 Output recibido:', output.dims, 'Elementos:', outputData.length);
                     
-                    // Procesar detecciones
                     const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
                     const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                     
                     console.log('✅ Detecciones encontradas:', deteccionesFiltradas.length);
                     
-                    // Actualizar display
                     deteccionesActuales = {};
                     for (const det of deteccionesFiltradas) {
                         deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
