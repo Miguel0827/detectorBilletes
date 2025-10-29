@@ -499,10 +499,28 @@
                     stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 }
                 
+                console.log('✅ Stream obtenido:', stream.getVideoTracks()[0].getSettings());
+                
                 video.srcObject = stream;
+                video.muted = true; // Asegurar que esté silenciado
+                video.setAttribute('playsinline', ''); // iOS compatibility
+                
+                // 🔥 CRÍTICO: Esperar a que el video cargue
+                await new Promise((resolve) => {
+                    video.onloadeddata = resolve;
+                    setTimeout(resolve, 2000); // Timeout de seguridad
+                });
                 
                 // 🔥 CRÍTICO: Forzar reproducción del video
-                await video.play().catch(err => console.warn('Play error:', err));
+                console.log('🎬 Intentando reproducir video...');
+                try {
+                    await video.play();
+                    console.log('✅ Video reproduciéndose');
+                } catch (err) {
+                    console.warn('⚠️ Error play:', err);
+                    // Intentar de nuevo
+                    setTimeout(() => video.play(), 100);
+                }
                 
                 video.onloadedmetadata = function() {
                     // 🚀 OPTIMIZACIÓN: Reducir canvas en dispositivos low-end
