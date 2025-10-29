@@ -151,34 +151,43 @@
             pointer-events: none;
         }
 
-        /* BOTÓN DE CAPTURA CENTRAL - NUEVO */
+        #capturedImage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            z-index: 5;
+        }
+
         .btn-capture {
             position: absolute;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 80px;
+            bottom: 15px;
+            right: 15px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 30px rgba(0, 255, 136, 0.6);
+            background: linear-gradient(135deg, #00ccff, #0088ff);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 204, 255, 0.6);
             cursor: pointer;
-            z-index: 15;
-            display: flex;
+            z-index: 20;
+            display: none;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
+            font-size: 28px;
             transition: all 0.3s;
         }
 
         .btn-capture:hover {
-            transform: translateX(-50%) scale(1.1);
-            box-shadow: 0 6px 40px rgba(0, 255, 136, 0.8);
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(0, 204, 255, 0.8);
         }
 
         .btn-capture:active {
-            transform: translateX(-50%) scale(0.95);
+            transform: scale(0.95);
         }
 
         .btn-capture.processing {
@@ -187,11 +196,10 @@
         }
 
         @keyframes pulse {
-            0%, 100% { transform: translateX(-50%) scale(1); }
-            50% { transform: translateX(-50%) scale(1.05); }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
-        /* Indicador de modo */
         .mode-indicator {
             position: absolute;
             top: 15px;
@@ -206,6 +214,7 @@
             z-index: 15;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: none;
         }
 
         .btn-menu-left {
@@ -552,9 +561,9 @@
             }
 
             .btn-capture {
-                width: 70px;
-                height: 70px;
-                font-size: 32px;
+                width: 55px;
+                height: 55px;
+                font-size: 24px;
             }
         }
 
@@ -568,12 +577,11 @@
         <div class="camera-wrapper">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
+            <img id="capturedImage" alt="Captura">
             
-            <!-- Indicador de modo -->
             <div class="mode-indicator" id="modeIndicator">📸 MODO CAPTURA</div>
             
-            <!-- Botón de captura central -->
-            <button class="btn-capture" id="btnCapture" onclick="capturarYDetectar()" style="display: none;">
+            <button class="btn-capture" id="btnCapture" onclick="capturarYDetectar()">
                 📸
             </button>
             
@@ -672,7 +680,7 @@
         const IOU_THRESHOLD = 0.5;
         let INPUT_SIZE = 640;
 
-        let video, canvas, ctx;
+        let video, canvas, ctx, capturedImage;
         let stream = null;
         let deteccionesActuales = {};
         let historial = [];
@@ -680,6 +688,9 @@
         let camarasDisponibles = [];
         let camaraActualIndex = 0;
         let camaraActiva = false;
+        let esMobil = false;
+        let deteccionActiva = false;
+        let procesando = false;
 
         function togglePanelLeft() {
             const panel = document.getElementById('panelLeft');
@@ -738,18 +749,27 @@
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
+            capturedImage = document.getElementById('capturedImage');
             
             cargarHistorial();
             actualizarOverlayDeteccion();
 
             const status = document.getElementById('status');
             const btnSwitchCamera = document.getElementById('btnSwitchCamera');
+            const btnCapture = document.getElementById('btnCapture');
+            const modeIndicator = document.getElementById('modeIndicator');
 
-            const esMobil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            esMobil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             if (esMobil) {
-                console.log('📱 Modo móvil - Detección por captura activada');
+                console.log('📱 Modo móvil - Detección por captura');
+                INPUT_SIZE = 640;
+                CONF_THRESHOLD = 0.35;
                 
+                btnCapture.style.display = 'flex';
+                modeIndicator.style.display = 'block';
+                modeIndicator.textContent = '📸 MODO CAPTURA';
+
                 try {
                     const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     tempStream.getTracks().forEach(track => track.stop());
@@ -764,6 +784,17 @@
                     console.warn('⚠️ Error detectando cámaras:', error);
                     btnSwitchCamera.style.display = 'block';
                 }
+            } else {
+                console.log('💻 Modo PC - Detección automática continua');
+                INPUT_SIZE = 640;
+                CONF_THRESHOLD = 0.5;
+                
+                btnCapture.style.display = 'none';
+                modeIndicator.style.display = 'block';
+                modeIndicator.style.background = 'rgba(0, 255, 136, 0.2)';
+                modeIndicator.style.borderColor = 'rgba(0, 255, 136, 0.5)';
+                modeIndicator.style.color = '#00ff88';
+                modeIndicator.textContent = '🤖 DETECCIÓN AUTOMÁTICA';
             }
 
             try {
@@ -814,13 +845,20 @@
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     
-                    document.getElementById('status').textContent = '✅ Cámara lista - Presiona 📸 para capturar';
+                    camaraActiva = true;
+                    
+                    if (esMobil) {
+                        document.getElementById('status').textContent = '✅ Cámara lista - Presiona 📸 para capturar';
+                        document.getElementById('btnCapture').style.display = 'flex';
+                    } else {
+                        document.getElementById('status').textContent = '✅ Detectando automáticamente...';
+                        deteccionActiva = true;
+                        detectarContinuo();
+                    }
+                    
                     document.getElementById('btnStart').textContent = '🛑 DETENER CÁMARA';
                     document.getElementById('btnStart').className = 'control-button btn-clear-current';
                     document.getElementById('btnStart').disabled = false;
-                    document.getElementById('btnCapture').style.display = 'flex';
-                    
-                    camaraActiva = true;
                 };
 
             } catch (error) {
@@ -851,14 +889,53 @@
                 stream.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
                 camaraActiva = false;
+                deteccionActiva = false;
+                procesando = false;
                 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                capturedImage.style.display = 'none';
                 
                 document.getElementById('status').textContent = '⏸️ Detenido';
                 document.getElementById('btnStart').textContent = '🎥 INICIAR CÁMARA';
                 document.getElementById('btnStart').className = 'control-button btn-camera';
                 document.getElementById('btnCapture').style.display = 'none';
             }
+        }
+
+        async function detectarContinuo() {
+            if (!deteccionActiva || !camaraActiva || !session || procesando) {
+                if (deteccionActiva && camaraActiva) {
+                    setTimeout(detectarContinuo, 2000);
+                }
+                return;
+            }
+
+            procesando = true;
+
+            try {
+                const input = preprocesarImagen();
+                const feeds = {};
+                feeds[session.inputNames[0]] = input;
+                const results = await session.run(feeds);
+                
+                const output = results[session.outputNames[0]];
+                const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
+                const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
+                
+                deteccionesActuales = {};
+                for (const det of deteccionesFiltradas) {
+                    deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
+                }
+                
+                actualizarOverlayDeteccion();
+                dibujarDetecciones(deteccionesFiltradas);
+                
+            } catch (error) {
+                console.error('Error detección:', error);
+            }
+
+            procesando = false;
+            setTimeout(detectarContinuo, 2000);
         }
 
         async function capturarYDetectar() {
@@ -873,6 +950,11 @@
 
             try {
                 const startTime = performance.now();
+                
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                capturedImage.src = canvas.toDataURL();
+                capturedImage.style.display = 'block';
                 
                 const input = preprocesarImagen();
                 const feeds = {};
@@ -1089,14 +1171,21 @@
                 overlay.style.borderTop = 'none';
                 deteccionesActuales = {};
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                capturedImage.style.display = 'none';
                 actualizarOverlayDeteccion();
-                document.getElementById('status').textContent = '✅ Listo para siguiente captura';
+                
+                if (esMobil) {
+                    document.getElementById('status').textContent = '✅ Listo para siguiente captura';
+                } else {
+                    document.getElementById('status').textContent = '✅ Guardado - Detectando...';
+                }
             }, 500);
         }
 
         function limpiarDeteccionActual() {
             deteccionesActuales = {};
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            capturedImage.style.display = 'none';
             actualizarOverlayDeteccion();
             
             const overlay = document.querySelector('.detection-overlay');
@@ -1105,7 +1194,11 @@
                 overlay.style.borderTop = 'none';
             }, 500);
 
-            document.getElementById('status').textContent = '🗑️ Detección limpiada';
+            if (esMobil) {
+                document.getElementById('status').textContent = '🗑️ Limpiado - Lista para nueva captura';
+            } else {
+                document.getElementById('status').textContent = '🗑️ Detección limpiada';
+            }
         }
 
         function eliminarDelHistorial(id) {
@@ -1181,6 +1274,9 @@
                 
                 canvas.width = img.width;
                 canvas.height = img.height;
+                
+                capturedImage.src = img.src;
+                capturedImage.style.display = 'block';
                 
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
