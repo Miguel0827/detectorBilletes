@@ -575,6 +575,10 @@
             🖼️ PROBAR CON IMAGEN
         </button>
 
+        <button class="control-button" id="btnSwitchCamera" onclick="cambiarCamara()" style="background: linear-gradient(135deg, #9d4edd, #7b2cbf); color: #fff; display: none;">
+            🔄 CAMBIAR CÁMARA
+        </button>
+
         <div class="control-panel">
             <h3>🎯 Ajustes de Detección</h3>
             <div class="control-row">
@@ -997,17 +1001,28 @@
             
             actualizarHistorialUI();
 
-            // Mostrar feedback visual
+            // Mostrar feedback visual con borde verde
             const overlay = document.querySelector('.detection-overlay');
             overlay.style.borderTop = '3px solid #00ff88';
+            
+            document.getElementById('status').textContent = '✅ Guardado en historial';
+
+            // Después de 500ms, limpiar la detección actual
             setTimeout(() => {
                 overlay.style.borderTop = 'none';
+                
+                // Limpiar detección actual
+                deteccionesActuales = {};
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                actualizarOverlayDeteccion();
+                
+                // Mostrar feedback de limpieza
+                document.getElementById('status').textContent = '✅ Guardado y limpiado - Listo para siguiente';
+                
+                setTimeout(() => {
+                    if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
+                }, 1500);
             }, 500);
-
-            document.getElementById('status').textContent = '✅ Guardado en historial';
-            setTimeout(() => {
-                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-            }, 1500);
         }
 
         function limpiarDeteccionActual() {
