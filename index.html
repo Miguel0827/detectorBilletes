@@ -384,8 +384,35 @@
             
             cargarHistorial();
             
+            // 🔍 Detectar navegadores problemáticos
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            let navegadorProblematico = false;
+            let mensajeNavegador = '';
+            
+            // Detectar navegadores in-app
+            if (/FBAN|FBAV|Instagram|Line|Snapchat|Twitter|WhatsApp/i.test(userAgent)) {
+                navegadorProblematico = true;
+                mensajeNavegador = '⚠️ Navegador in-app detectado. Abre en Chrome/Safari';
+            }
+            
+            // Detectar iOS + no Safari
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+            const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+            
+            if (isIOS && !isSafari) {
+                navegadorProblematico = true;
+                mensajeNavegador = '⚠️ En iOS usa Safari. Chrome/Firefox no tienen acceso a cámara';
+            }
+            
+            if (navegadorProblematico) {
+                document.getElementById('status').innerHTML = 
+                    `<div class="error">${mensajeNavegador}<br><small>💡 Usa "PROBAR CON IMAGEN" como alternativa</small></div>`;
+                console.warn('⚠️', mensajeNavegador);
+            }
+            
             try {
-                document.getElementById('status').textContent = 'Cargando modelo...';
+                document.getElementById('status').textContent = navegadorProblematico ? 
+                    mensajeNavegador : 'Cargando modelo...';
                 console.log('🔄 Intentando cargar: models/best.onnx');
                 
                 session = await ort.InferenceSession.create('models/best.onnx');
@@ -399,9 +426,13 @@
                 console.log('🎯 Clases configuradas:', CLASS_NAMES.length);
                 console.log('📋 Lista de clases:', CLASS_NAMES);
                 console.log('💰 Valores:', VALORES);
+                console.log('🌐 User Agent:', userAgent);
+                console.log('📱 iOS:', isIOS, '| Safari:', isSafari);
                 console.log('═══════════════════════════════════════');
                 
-                document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
+                if (!navegadorProblematico) {
+                    document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
+                }
             } catch (error) {
                 console.error('❌ ERROR CARGANDO MODELO:', error);
                 console.log('📁 Verifica que existe: models/best.onnx');
@@ -429,31 +460,90 @@
                 return;
             }
 
+            // Verificar si estamos en HTTPS
+            const esHTTPS = window.location.protocol === 'https:';
+            const esLocalhost = window.location.hostname === 'localhost' || 
+                               window.location.hostname === '127.0.0.1';
+            
+            if (!esHTTPS && !esLocalhost) {
+                document.getElementById('status').innerHTML = 
+                    '<div class="error">⚠️ HTTPS requerido para cámara. Usa el botón "PROBAR CON IMAGEN"</div>';
+                console.error('❌ Acceso a cámara bloqueado: se requiere HTTPS');
+                console.log('📍 URL actual:', window.location.href);
+                console.log('💡 Solución: Accede via HTTPS o usa localhost');
+                return;
+            }
+
             try {
-                document.getElementById('status').textContent = 'Iniciando...';
+                document.getElementById('status').textContent = '⏳ Solicitando permisos de cámara...';
                 document.getElementById('btnStart').disabled = true;
+                
+                console.log('🔄 Iniciando solicitud de cámara...');
+                console.log('📍 Protocolo:', window.location.protocol);
+                console.log('📍 Host:', window.location.hostname);
+
+                // Verificar disponibilidad de getUserMedia
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Tu navegador no soporta acceso a la cámara');
+                }
 
                 let constraints = {
                     video: {
-                        width: { ideal: 480 },
-                        height: { ideal: 360 }
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'environment'  // Cámara trasera en móviles
                     }
                 };
 
+                // Si hay cámaras disponibles, INTENTAR usar la seleccionada (pero no forzar con 'exact')
                 if (camarasDisponibles.length > 0) {
                     const camara = camarasDisponibles[camaraActualIndex];
-                    constraints.video.deviceId = { exact: camara.deviceId };
-                    console.log('Usando:', camara.label);
-                } else {
-                    constraints.video.facingMode = 'environment';
+                    // Usar 'ideal' en lugar de 'exact' para ser más flexible
+                    constraints.video.deviceId = { ideal: camara.deviceId };
+                    console.log('📹 Intentando usar:', camara.label || `Cámara ${camaraActualIndex + 1}`);
                 }
 
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('🎥 Solicitando acceso con constraints:', constraints);
+                
+                // Timeout de 10 segundos
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout: Sin respuesta del usuario')), 10000)
+                );
+                
+                // Intentar primero con constraints ideales
+                try {
+                    stream = await Promise.race([
+                        navigator.mediaDevices.getUserMedia(constraints),
+                        timeoutPromise
+                    ]);
+                    console.log('✅ Stream obtenido con constraints ideales');
+                } catch (constraintError) {
+                    // Si falla, intentar con constraints mínimas (fallback)
+                    if (constraintError.name === 'OverconstrainedError') {
+                        console.warn('⚠️ Constraints muy altas, intentando modo básico...');
+                        
+                        const basicConstraints = {
+                            video: {
+                                facingMode: 'environment'
+                                // Sin restricciones de resolución
+                            }
+                        };
+                        
+                        stream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+                        console.log('✅ Stream obtenido con constraints básicas');
+                    } else {
+                        throw constraintError; // Re-lanzar si es otro error
+                    }
+                }
+                
+                console.log('✅ Stream obtenido');
                 video.srcObject = stream;
                 
                 video.onloadedmetadata = function() {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
+                    
+                    console.log('✅ Cámara iniciada:', video.videoWidth, 'x', video.videoHeight);
                     
                     document.getElementById('status').textContent = '✅ Detectando';
                     document.getElementById('btnStart').textContent = '🛑 DETENER';
@@ -465,10 +555,47 @@
                 };
 
             } catch (error) {
-                console.error('❌ Error:', error);
+                console.error('❌ Error de cámara:', error);
+                
+                let mensaje = '❌ ';
+                let sugerencia = '';
+                
+                if (error.message === 'Timeout: Sin respuesta del usuario') {
+                    mensaje += 'No se recibió respuesta. ¿Denegaste el permiso?';
+                    sugerencia = '💡 Recarga la página e intenta de nuevo';
+                } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    mensaje += 'Permisos de cámara denegados';
+                    sugerencia = '💡 Ve a configuración del navegador y permite el acceso a la cámara';
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    mensaje += 'No se encontró ninguna cámara';
+                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    mensaje += 'Cámara ocupada por otra aplicación';
+                    sugerencia = '💡 Cierra otras apps que usen la cámara';
+                } else if (error.name === 'OverconstrainedError') {
+                    mensaje += 'No hay cámara compatible';
+                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
+                } else if (error.name === 'TypeError') {
+                    mensaje += 'Navegador no compatible';
+                    sugerencia = '💡 Intenta con Chrome o Firefox';
+                } else {
+                    mensaje += error.message;
+                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
+                }
+                
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">❌ Error de cámara</div>';
+                    `<div class="error">${mensaje}<br><small>${sugerencia}</small></div>`;
                 document.getElementById('btnStart').disabled = false;
+                
+                console.log('═══════════════════════════════════════');
+                console.log('❌ DIAGNÓSTICO DE ERROR');
+                console.log('═══════════════════════════════════════');
+                console.log('Error:', error.name);
+                console.log('Mensaje:', error.message);
+                console.log('HTTPS:', esHTTPS);
+                console.log('Localhost:', esLocalhost);
+                console.log('UserAgent:', navigator.userAgent);
+                console.log('═══════════════════════════════════════');
             }
         }
 
