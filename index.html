@@ -276,8 +276,8 @@
         <div class="controls-panel">
             <div class="control-row">
                 <label>Confianza:</label>
-                <input type="range" id="confSlider" min="30" max="90" value="60" oninput="actualizarConf(this.value)">
-                <span id="confValue">60%</span>
+                <input type="range" id="confSlider" min="20" max="90" value="50" oninput="actualizarConf(this.value)">
+                <span id="confValue">50%</span>
             </div>
             <div class="control-row">
                 <label>Velocidad:</label>
@@ -324,9 +324,9 @@
             "50000": 50000
         };
 
-        let CONF_THRESHOLD = 0.6;
-        const IOU_THRESHOLD = 0.6;
-        const INPUT_SIZE = 320;
+        let CONF_THRESHOLD = 0.5;  // Reducido de 0.6 a 0.5 (50%)
+        const IOU_THRESHOLD = 0.5;  // Reducido para evitar suprimir detecciones válidas
+        const INPUT_SIZE = 640;  // Debe coincidir con tu entrenamiento
 
         let video, canvas, ctx;
         let stream = null;
@@ -381,6 +381,14 @@
             try {
                 document.getElementById('status').textContent = 'Cargando modelo...';
                 session = await ort.InferenceSession.create('models/best.onnx');
+                
+                // 🔍 DIAGNOSTICO DEL MODELO
+                console.log('📥 INPUT:', session.inputNames[0]);
+                console.log('📤 OUTPUT:', session.outputNames[0]);
+                const inputMeta = session.inputNames[0];
+                const outputMeta = session.outputNames[0];
+                console.log('🎯 Modelo cargado - esperando', CLASS_NAMES.length, 'clases');
+                
                 document.getElementById('status').textContent = '✅ Listo';
                 console.log('✅ Modelo cargado correctamente');
                 console.log('📊 Clases:', CLASS_NAMES);
@@ -492,7 +500,28 @@
                 feeds[session.inputNames[0]] = input;
                 const results = await session.run(feeds);
                 
-                const outputData = results[session.outputNames[0]].data;
+                const output = results[session.outputNames[0]];
+                const outputData = output.data;
+                
+                // 🔍 DIAGNOSTICO (solo primera vez)
+                if (!window.diagnosticoDone) {
+                    console.log('═══════════════════════════════════════');
+                    console.log('🔍 DIAGNÓSTICO DEL MODELO ONNX');
+                    console.log('═══════════════════════════════════════');
+                    console.log('📊 Shape output:', output.dims);
+                    console.log('📏 Total elementos:', outputData.length);
+                    console.log('🎯 Clases esperadas:', CLASS_NAMES.length);
+                    console.log('📐 Input size:', INPUT_SIZE);
+                    
+                    // Calcular formato
+                    const numClases = CLASS_NAMES.length;
+                    const numPreds = Math.floor(outputData.length / (4 + numClases));
+                    console.log('🔢 Predicciones calculadas:', numPreds);
+                    console.log('═══════════════════════════════════════');
+                    
+                    window.diagnosticoDone = true;
+                }
+                
                 const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
                 const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                 
@@ -535,27 +564,46 @@
 
         function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const detecciones = [];
-            const numClasses = CLASS_NAMES.length;
-            const numBoxes = Math.floor(outputData.length / (numClasses + 4));
+            const numClases = CLASS_NAMES.length;
             
-            for (let i = 0; i < numBoxes; i++) {
-                const xCenter = outputData[i];
-                const yCenter = outputData[numBoxes + i];
-                const width = outputData[numBoxes * 2 + i];
-                const height = outputData[numBoxes * 3 + i];
+            // YOLOv11 ONNX formato: [1, 4+nc, num_predictions]
+            // Calcular número de predicciones
+            const totalElements = outputData.length;
+            const numPredictions = Math.floor(totalElements / (4 + numClases));
+            
+            console.log('🔍 DEBUG:', {
+                totalElements,
+                numClases,
+                numPredictions,
+                expectedSize: (4 + numClases) * numPredictions
+            });
+            
+            for (let i = 0; i < numPredictions; i++) {
+                // YOLOv11: las coordenadas están en las primeras 4 filas
+                // outputData está organizado como: [x0, x1, x2, ..., y0, y1, y2, ..., w0, w1, ...]
+                const xCenter = outputData[i];                          // Fila 0
+                const yCenter = outputData[numPredictions + i];         // Fila 1
+                const width = outputData[numPredictions * 2 + i];       // Fila 2
+                const height = outputData[numPredictions * 3 + i];      // Fila 3
                 
+                // Las probabilidades de clase empiezan en la fila 4
                 let maxScore = 0;
                 let maxClassId = 0;
                 
-                for (let c = 0; c < numClasses; c++) {
-                    const score = outputData[numBoxes * (4 + c) + i];
+                for (let c = 0; c < numClases; c++) {
+                    const scoreIndex = numPredictions * (4 + c) + i;
+                    const score = outputData[scoreIndex];
+                    
                     if (score > maxScore) {
                         maxScore = score;
                         maxClassId = c;
                     }
                 }
                 
+                // Filtrar por confianza
                 if (maxScore > CONF_THRESHOLD) {
+                    // YOLOv11 devuelve coordenadas normalizadas (0-1) relativas a INPUT_SIZE
+                    // Convertir a píxeles del canvas
                     const x1 = Math.max(0, (xCenter - width / 2) * imgWidth / INPUT_SIZE);
                     const y1 = Math.max(0, (yCenter - height / 2) * imgHeight / INPUT_SIZE);
                     const x2 = Math.min(imgWidth, (xCenter + width / 2) * imgWidth / INPUT_SIZE);
@@ -566,9 +614,12 @@
                         conf: maxScore,
                         bbox: [x1, y1, x2, y2]
                     });
+                    
+                    console.log(`✅ ${CLASS_NAMES[maxClassId]}: ${(maxScore*100).toFixed(1)}%`);
                 }
             }
             
+            console.log(`📊 Detecciones válidas: ${detecciones.length}/${numPredictions}`);
             return detecciones;
         }
 
