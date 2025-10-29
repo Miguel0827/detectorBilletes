@@ -730,12 +730,12 @@
             const esMobil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             if (esMobil) {
-                // Optimizaciones para móvil
-                INPUT_SIZE = 480; // Balance entre velocidad y precisión
-                deteccionInterval = 2500; // Intervalo razonable
-                CONF_THRESHOLD = 0.30; // Umbral balanceado
+                // Optimizaciones para móvil - BALANCE ÓPTIMO
+                INPUT_SIZE = 544; // Sweet spot: no tan pesado, detecta bien
+                deteccionInterval = 2000; // Detección cada 2 segundos
+                CONF_THRESHOLD = 0.28; // Umbral balanceado
                 console.log('📱 Modo móvil activado - INPUT_SIZE:', INPUT_SIZE);
-                console.log('🎯 Umbral confianza reducido a:', CONF_THRESHOLD);
+                console.log('🎯 Umbral confianza:', CONF_THRESHOLD);
 
                 try {
                     // Solicitar permisos temporalmente
@@ -812,9 +812,10 @@
                 const constraints = {
                     video: {
                         facingMode: { ideal: 'environment' },
-                        width: { ideal: 1920 },  // Resolución más alta
+                        width: { ideal: 1920 },
                         height: { ideal: 1080 },
-                        aspectRatio: { ideal: 16/9 }
+                        aspectRatio: { ideal: 16/9 },
+                        frameRate: { ideal: 30, max: 30 } // Limitar FPS
                     }
                 };
 
