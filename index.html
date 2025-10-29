@@ -193,6 +193,11 @@
             transform: scale(0.95);
         }
 
+        .btn-capture:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn-capture.processing {
             background: linear-gradient(135deg, #ffaa00, #ff6600);
             animation: pulse 1s infinite;
@@ -706,7 +711,7 @@
         };
 
         let CONF_THRESHOLD = 0.35;
-        const IOU_THRESHOLD = 0.5;
+        const IOU_THRESHOLD = 0.4;
         let INPUT_SIZE = 640;
 
         let video, canvas, ctx, capturedImage;
@@ -793,7 +798,7 @@
             if (esMobil) {
                 console.log('📱 Modo móvil - Detección por captura');
                 INPUT_SIZE = 640;
-                CONF_THRESHOLD = 0.35;
+                CONF_THRESHOLD = 0.30;
                 
                 btnCapture.style.display = 'flex';
                 modeIndicator.style.display = 'block';
@@ -816,7 +821,7 @@
             } else {
                 console.log('💻 Modo PC - Detección automática continua');
                 INPUT_SIZE = 640;
-                CONF_THRESHOLD = 0.5;
+                CONF_THRESHOLD = 0.40;
                 
                 btnCapture.style.display = 'none';
                 modeIndicator.style.display = 'block';
@@ -940,7 +945,7 @@
         async function detectarContinuo() {
             if (!deteccionActiva || !camaraActiva || !session || procesando) {
                 if (deteccionActiva && camaraActiva) {
-                    setTimeout(detectarContinuo, 1000);
+                    setTimeout(detectarContinuo, 800);
                 }
                 return;
             }
@@ -970,63 +975,78 @@
             }
 
             procesando = false;
-            setTimeout(detectarContinuo, 1000);
+            setTimeout(detectarContinuo, 800);
         }
 
         async function capturarYDetectar() {
-            if (!camaraActiva || !session) return;
+            if (!camaraActiva || !session || procesando) return;
 
+            procesando = true;
             const btnCapture = document.getElementById('btnCapture');
             btnCapture.classList.add('processing');
             btnCapture.textContent = '⏳';
             btnCapture.disabled = true;
 
-            // PAUSAR EL VIDEO INMEDIATAMENTE
             video.pause();
 
             document.getElementById('status').textContent = '🔎 Analizando...';
 
-            try {
-                const startTime = performance.now();
-                
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                capturedImage.src = canvas.toDataURL();
-                capturedImage.style.display = 'block';
-                
-                const input = preprocesarImagen();
-                const feeds = {};
-                feeds[session.inputNames[0]] = input;
-                const results = await session.run(feeds);
-                
-                const output = results[session.outputNames[0]];
-                const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
-                const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
-                
-                const endTime = performance.now();
-                console.log(`⏱️ Tiempo: ${(endTime - startTime).toFixed(0)}ms | Detecciones: ${deteccionesFiltradas.length}`);
-                
-                deteccionesActuales = {};
-                for (const det of deteccionesFiltradas) {
-                    deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
+            requestAnimationFrame(async () => {
+                try {
+                    const startTime = performance.now();
+                    
+                    const maxDimension = 1280;
+                    let drawWidth = canvas.width;
+                    let drawHeight = canvas.height;
+                    
+                    if (canvas.width > maxDimension || canvas.height > maxDimension) {
+                        const scale = maxDimension / Math.max(canvas.width, canvas.height);
+                        drawWidth = canvas.width * scale;
+                        drawHeight = canvas.height * scale;
+                        canvas.width = drawWidth;
+                        canvas.height = drawHeight;
+                    }
+                    
+                    ctx.drawImage(video, 0, 0, drawWidth, drawHeight);
+                    
+                    capturedImage.src = canvas.toDataURL('image/jpeg', 0.85);
+                    capturedImage.style.display = 'block';
+                    
+                    const input = preprocesarImagen();
+                    const feeds = {};
+                    feeds[session.inputNames[0]] = input;
+                    const results = await session.run(feeds);
+                    
+                    const output = results[session.outputNames[0]];
+                    const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
+                    const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
+                    
+                    const endTime = performance.now();
+                    console.log(`⏱️ Tiempo: ${(endTime - startTime).toFixed(0)}ms | Detecciones: ${deteccionesFiltradas.length}`);
+                    
+                    deteccionesActuales = {};
+                    for (const det of deteccionesFiltradas) {
+                        deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
+                    }
+                    
+                    actualizarOverlayDeteccion();
+                    dibujarDetecciones(deteccionesFiltradas);
+                    
+                    document.getElementById('status').textContent = 
+                        deteccionesFiltradas.length > 0 ? 
+                        `✅ ${deteccionesFiltradas.length} billetes detectados` : 
+                        '⚠️ No se detectaron billetes';
+                    
+                } catch (error) {
+                    console.error('Error detección:', error);
+                    document.getElementById('status').textContent = '❌ Error al procesar';
                 }
-                
-                actualizarOverlayDeteccion();
-                dibujarDetecciones(deteccionesFiltradas);
-                
-                document.getElementById('status').textContent = 
-                    deteccionesFiltradas.length > 0 ? 
-                    `✅ ${deteccionesFiltradas.length} billetes detectados` : 
-                    '⚠️ No se detectaron billetes';
-                
-            } catch (error) {
-                console.error('Error detección:', error);
-                document.getElementById('status').textContent = '❌ Error al procesar';
-            }
 
-            btnCapture.classList.remove('processing');
-            btnCapture.textContent = '📸';
-            btnCapture.disabled = false;
+                btnCapture.classList.remove('processing');
+                btnCapture.textContent = '📸';
+                btnCapture.disabled = false;
+                procesando = false;
+            });
         }
 
         function actualizarOverlayDeteccion() {
@@ -1058,10 +1078,10 @@
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d');
+            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
             
             tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'high';
+            tempCtx.imageSmoothingQuality = 'medium';
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
@@ -1132,9 +1152,12 @@
                 
                 for (let j = i + 1; j < detecciones.length; j++) {
                     if (suppressed[j]) continue;
+                    
                     if (detecciones[i].class === detecciones[j].class) {
                         const iou = calcularIoU(detecciones[i].bbox, detecciones[j].bbox);
-                        if (iou > iouThreshold) suppressed[j] = true;
+                        if (iou > iouThreshold) {
+                            suppressed[j] = true;
+                        }
                     }
                 }
             }
@@ -1212,7 +1235,6 @@
                 capturedImage.style.display = 'none';
                 actualizarOverlayDeteccion();
                 
-                // REANUDAR EL VIDEO
                 if (camaraActiva && video.paused) {
                     video.play();
                 }
@@ -1237,7 +1259,6 @@
                 overlay.style.borderTop = 'none';
             }, 500);
 
-            // REANUDAR EL VIDEO
             if (camaraActiva && video.paused) {
                 video.play();
             }
@@ -1367,9 +1388,12 @@
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d');
+            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
             
+            tempCtx.imageSmoothingEnabled = true;
+            tempCtx.imageSmoothingQuality = 'medium';
             tempCtx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
+            
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
             const { data } = imageData;
             
