@@ -297,11 +297,17 @@
 
         <div class="buttons">
             <button class="btn-start" id="btnStart" onclick="iniciarCamara()">
-                🎥 INICIAR
+                🎥 INICIAR CÁMARA
+            </button>
+            <button class="btn-start" style="background: linear-gradient(135deg, #ff9500, #ff5e00);" onclick="probarConImagen()">
+                🖼️ PROBAR CON IMAGEN
             </button>
             <button class="btn-save" onclick="guardarConteo()">💾 GUARDAR</button>
             <button class="btn-clear" onclick="limpiarTodo()">🗑️ LIMPIAR</button>
         </div>
+
+        <!-- Input oculto para cargar imagen -->
+        <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="procesarImagen(this)">
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
@@ -380,22 +386,28 @@
             
             try {
                 document.getElementById('status').textContent = 'Cargando modelo...';
+                console.log('🔄 Intentando cargar: models/best.onnx');
+                
                 session = await ort.InferenceSession.create('models/best.onnx');
                 
-                // 🔍 DIAGNOSTICO DEL MODELO
-                console.log('📥 INPUT:', session.inputNames[0]);
-                console.log('📤 OUTPUT:', session.outputNames[0]);
-                const inputMeta = session.inputNames[0];
-                const outputMeta = session.outputNames[0];
-                console.log('🎯 Modelo cargado - esperando', CLASS_NAMES.length, 'clases');
+                // 🔍 DIAGNOSTICO COMPLETO DEL MODELO
+                console.log('═══════════════════════════════════════');
+                console.log('✅ MODELO CARGADO EXITOSAMENTE');
+                console.log('═══════════════════════════════════════');
+                console.log('📥 Input name:', session.inputNames[0]);
+                console.log('📤 Output name:', session.outputNames[0]);
+                console.log('🎯 Clases configuradas:', CLASS_NAMES.length);
+                console.log('📋 Lista de clases:', CLASS_NAMES);
+                console.log('💰 Valores:', VALORES);
+                console.log('═══════════════════════════════════════');
                 
-                document.getElementById('status').textContent = '✅ Listo';
-                console.log('✅ Modelo cargado correctamente');
-                console.log('📊 Clases:', CLASS_NAMES);
+                document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
             } catch (error) {
-                console.error('❌ Error modelo:', error);
+                console.error('❌ ERROR CARGANDO MODELO:', error);
+                console.log('📁 Verifica que existe: models/best.onnx');
+                console.log('🌐 Ruta completa debería ser:', window.location.origin + '/models/best.onnx');
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ Modelo no encontrado</div>';
+                    '<div class="error">⚠️ Modelo no encontrado en /models/best.onnx</div>';
             }
 
             try {
@@ -759,6 +771,101 @@
                 actualizarHistorialUI();
                 document.getElementById('status').textContent = '🗑️ Limpiado';
             }
+        }
+
+        // 🖼️ FUNCIONES PARA PROBAR CON IMAGEN
+        function probarConImagen() {
+            if (!session) {
+                alert('⚠️ Modelo no cargado');
+                return;
+            }
+            document.getElementById('imageInput').click();
+        }
+
+        async function procesarImagen(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const file = input.files[0];
+            console.log('📸 Procesando imagen:', file.name);
+            
+            const img = new Image();
+            img.onload = async function() {
+                // Detener cámara si está activa
+                if (stream) detenerCamara();
+                
+                // Ajustar canvas al tamaño de la imagen
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Dibujar imagen en el video (para visualización)
+                const videoCtx = canvas.getContext('2d');
+                videoCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                try {
+                    console.log('🔍 Iniciando detección en imagen...');
+                    document.getElementById('status').textContent = '🔍 Analizando...';
+                    
+                    // Preprocesar imagen
+                    const input = preprocesarImagenStatic(img);
+                    const feeds = {};
+                    feeds[session.inputNames[0]] = input;
+                    
+                    // Ejecutar modelo
+                    const results = await session.run(feeds);
+                    const output = results[session.outputNames[0]];
+                    const outputData = output.data;
+                    
+                    console.log('📊 Output recibido:', output.dims, 'Elementos:', outputData.length);
+                    
+                    // Procesar detecciones
+                    const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
+                    const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
+                    
+                    console.log('✅ Detecciones encontradas:', deteccionesFiltradas.length);
+                    
+                    // Actualizar display
+                    deteccionesActuales = {};
+                    for (const det of deteccionesFiltradas) {
+                        deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
+                    }
+                    
+                    actualizarDisplay();
+                    dibujarDetecciones(deteccionesFiltradas);
+                    
+                    document.getElementById('status').textContent = 
+                        deteccionesFiltradas.length > 0 ? 
+                        `✅ ${deteccionesFiltradas.length} billetes detectados` : 
+                        '⚠️ No se detectaron billetes';
+                    
+                } catch (error) {
+                    console.error('❌ Error procesando imagen:', error);
+                    document.getElementById('status').innerHTML = 
+                        '<div class="error">❌ Error al procesar</div>';
+                }
+            };
+            
+            img.src = URL.createObjectURL(file);
+        }
+
+        function preprocesarImagenStatic(img) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = INPUT_SIZE;
+            tempCanvas.height = INPUT_SIZE;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
+            const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
+            const { data } = imageData;
+            
+            const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+            
+            for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
+                input[i] = data[i * 4] / 255.0;
+                input[INPUT_SIZE * INPUT_SIZE + i] = data[i * 4 + 1] / 255.0;
+                input[INPUT_SIZE * INPUT_SIZE * 2 + i] = data[i * 4 + 2] / 255.0;
+            }
+            
+            return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
         }
 
         window.onbeforeunload = function() {
