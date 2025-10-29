@@ -29,7 +29,6 @@
             justify-content: center;
         }
 
-        /* Cámara Central Fija */
         .camera-wrapper {
             position: relative;
             width: 640px;
@@ -42,7 +41,6 @@
             background: #000;
         }
 
-        /* Overlay de Detección sobre la cámara */
         .detection-overlay {
             position: absolute;
             bottom: 0;
@@ -153,7 +151,63 @@
             pointer-events: none;
         }
 
-        /* Botón Menú Izquierdo */
+        /* BOTÓN DE CAPTURA CENTRAL - NUEVO */
+        .btn-capture {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 255, 136, 0.6);
+            cursor: pointer;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            transition: all 0.3s;
+        }
+
+        .btn-capture:hover {
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 6px 40px rgba(0, 255, 136, 0.8);
+        }
+
+        .btn-capture:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        .btn-capture.processing {
+            background: linear-gradient(135deg, #ffaa00, #ff6600);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+        }
+
+        /* Indicador de modo */
+        .mode-indicator {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 204, 255, 0.2);
+            border: 1px solid rgba(0, 204, 255, 0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #00ccff;
+            z-index: 15;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         .btn-menu-left {
             position: fixed;
             left: 20px;
@@ -180,7 +234,6 @@
             transform: translateY(-50%) scale(0.95);
         }
 
-        /* Botón Menú Derecho */
         .btn-menu-right {
             position: fixed;
             right: 20px;
@@ -207,7 +260,6 @@
             transform: translateY(-50%) scale(0.95);
         }
 
-        /* Panel Izquierdo - Controles */
         .panel-left {
             position: fixed;
             left: -350px;
@@ -227,7 +279,6 @@
             left: 0;
         }
 
-        /* Panel Derecho - Historial */
         .panel-right {
             position: fixed;
             right: -400px;
@@ -279,7 +330,6 @@
             background: rgba(255, 68, 68, 0.4);
         }
 
-        /* Botones del Panel Izquierdo */
         .control-button {
             width: 100%;
             padding: 15px;
@@ -303,11 +353,6 @@
             color: #fff;
         }
 
-        .btn-save {
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            color: #000;
-        }
-
         .btn-clear-current {
             background: linear-gradient(135deg, #ffaa00, #ff6600);
             color: #fff;
@@ -322,7 +367,6 @@
             cursor: not-allowed;
         }
 
-        /* Controles de Ajustes */
         .control-panel {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
@@ -365,7 +409,6 @@
             font-size: 13px;
         }
 
-        /* Status */
         .status-panel {
             background: rgba(0, 204, 255, 0.1);
             border: 1px solid rgba(0, 204, 255, 0.3);
@@ -377,7 +420,6 @@
             color: #00ccff;
         }
 
-        /* Historial */
         .historial-header {
             background: rgba(0, 255, 136, 0.1);
             border-radius: 8px;
@@ -475,7 +517,6 @@
             padding: 30px 20px;
         }
 
-        /* Overlay para cerrar menús */
         .overlay {
             position: fixed;
             top: 0;
@@ -491,7 +532,6 @@
             display: block;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .panel-left, .panel-right {
                 width: 90vw;
@@ -510,6 +550,12 @@
             .btn-menu-right {
                 right: 10px;
             }
+
+            .btn-capture {
+                width: 70px;
+                height: 70px;
+                font-size: 32px;
+            }
         }
 
         input[type="file"] {
@@ -518,13 +564,19 @@
     </style>
 </head>
 <body>
-    <!-- Cámara Central -->
     <div class="main-container">
         <div class="camera-wrapper">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
             
-            <!-- Overlay de Detección -->
+            <!-- Indicador de modo -->
+            <div class="mode-indicator" id="modeIndicator">📸 MODO CAPTURA</div>
+            
+            <!-- Botón de captura central -->
+            <button class="btn-capture" id="btnCapture" onclick="capturarYDetectar()" style="display: none;">
+                📸
+            </button>
+            
             <div class="detection-overlay">
                 <div class="detection-value">
                     <div class="detection-value-amount" id="detectionAmount">$0</div>
@@ -547,16 +599,11 @@
         </div>
     </div>
 
-    <!-- Botón Menú Izquierdo -->
     <button class="btn-menu-left" onclick="togglePanelLeft()">⚙️</button>
-
-    <!-- Botón Menú Derecho -->
     <button class="btn-menu-right" onclick="togglePanelRight()">💰</button>
 
-    <!-- Overlay -->
     <div class="overlay" id="overlay" onclick="closePanels()"></div>
 
-    <!-- Panel Izquierdo - Controles -->
     <div class="panel-left" id="panelLeft">
         <div class="panel-header">
             <h2>⚙️ Controles</h2>
@@ -572,7 +619,7 @@
         </button>
 
         <button class="control-button btn-image" onclick="probarConImagen()">
-            🖼️ PROBAR CON IMAGEN
+            🖼️ SUBIR IMAGEN
         </button>
 
         <button class="control-button" id="btnSwitchCamera" onclick="cambiarCamara()" style="background: linear-gradient(135deg, #9d4edd, #7b2cbf); color: #fff; display: none;">
@@ -583,18 +630,12 @@
             <h3>🎯 Ajustes de Detección</h3>
             <div class="control-row">
                 <label>Confianza:</label>
-                <input type="range" id="confSlider" min="20" max="90" value="50" oninput="actualizarConf(this.value)">
-                <span id="confValue">50%</span>
-            </div>
-            <div class="control-row">
-                <label>Velocidad:</label>
-                <input type="range" id="speedSlider" min="1" max="5" value="1" oninput="actualizarVelocidad(this.value)">
-                <span id="speedValue">Lenta</span>
+                <input type="range" id="confSlider" min="10" max="90" value="35" oninput="actualizarConf(this.value)">
+                <span id="confValue">35%</span>
             </div>
         </div>
     </div>
 
-    <!-- Panel Derecho - Historial -->
     <div class="panel-right" id="panelRight">
         <div class="panel-header">
             <h2>💰 Historial</h2>
@@ -627,7 +668,7 @@
             "50": 50, "500": 500, "5000": 5000, "50000": 50000
         };
 
-        let CONF_THRESHOLD = 0.5;
+        let CONF_THRESHOLD = 0.35;
         const IOU_THRESHOLD = 0.5;
         let INPUT_SIZE = 640;
 
@@ -635,14 +676,11 @@
         let stream = null;
         let deteccionesActuales = {};
         let historial = [];
-        let deteccionActiva = false;
         let session = null;
         let camarasDisponibles = [];
         let camaraActualIndex = 0;
-        let deteccionInterval = 4000;
-        let procesando = false;
+        let camaraActiva = false;
 
-        // Funciones de Menús
         function togglePanelLeft() {
             const panel = document.getElementById('panelLeft');
             const overlay = document.getElementById('overlay');
@@ -682,25 +720,6 @@
         function actualizarConf(value) {
             CONF_THRESHOLD = value / 100;
             document.getElementById('confValue').textContent = value + '%';
-            console.log('🎯 Nuevo umbral de confianza:', CONF_THRESHOLD);
-        }
-
-        function actualizarVelocidad(value) {
-            const velocidades = {
-                '1': { texto: 'Lenta', ms: 4000 },
-                '2': { texto: 'Media', ms: 2500 },
-                '3': { texto: 'Rápida', ms: 1500 },
-                '4': { texto: 'Turbo', ms: 1000 },
-                '5': { texto: 'Ultra', ms: 500 }
-            };
-            
-            // En móvil, ajustar automáticamente
-            const esMobil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            const vel = velocidades[value];
-            deteccionInterval = esMobil ? Math.max(vel.ms, 2500) : vel.ms; // Mínimo 2.5s en móvil
-            document.getElementById('speedValue').textContent = vel.texto;
-            console.log('⏱️ Intervalo detección:', deteccionInterval, 'ms');
         }
 
         function cargarHistorial() {
@@ -726,68 +745,31 @@
             const status = document.getElementById('status');
             const btnSwitchCamera = document.getElementById('btnSwitchCamera');
 
-            // 📱 Detectar móvil PRIMERO
             const esMobil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             if (esMobil) {
-                // Optimizaciones para móvil - MODO AGRESIVO
-                INPUT_SIZE = 640; // Volver al tamaño completo
-                deteccionInterval = 3000; // Más tiempo pero mejor detección
-                CONF_THRESHOLD = 0.20; // Umbral muy bajo
-                console.log('📱 Modo móvil activado - INPUT_SIZE:', INPUT_SIZE);
-                console.log('🎯 Umbral confianza MUY BAJO:', CONF_THRESHOLD);
-                console.log('⚠️ MODO DIAGNÓSTICO ACTIVADO');
-
+                console.log('📱 Modo móvil - Detección por captura activada');
+                
                 try {
-                    // Solicitar permisos temporalmente
                     const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     tempStream.getTracks().forEach(track => track.stop());
 
-                    // Listar cámaras disponibles
                     const devices = await navigator.mediaDevices.enumerateDevices();
                     camarasDisponibles = devices.filter(d => d.kind === 'videoinput');
 
-                    console.log('📹 Cámaras encontradas:', camarasDisponibles.length);
-                    camarasDisponibles.forEach((cam, i) => {
-                        console.log(`  ${i}: ${cam.label || 'Cámara ' + (i+1)}`);
-                    });
-
-                    // Mostrar botón si hay múltiples cámaras O si es móvil (para forzar)
                     if (camarasDisponibles.length >= 1) {
                         btnSwitchCamera.style.display = 'block';
-                        console.log('✅ Botón cambiar cámara ACTIVADO');
                     }
                 } catch (error) {
                     console.warn('⚠️ Error detectando cámaras:', error);
-                    // En móviles, mostrar el botón de todas formas
                     btnSwitchCamera.style.display = 'block';
-                    console.log('⚠️ Botón visible por defecto en móvil');
                 }
-            } else {
-                console.log('💻 Modo PC detectado');
             }
 
-            // Cargar modelo DESPUÉS de configurar INPUT_SIZE
             try {
                 status.textContent = 'Cargando modelo...';
-                
-                // Configuración optimizada para móvil
-                const sessionOptions = {
-                    executionProviders: ['wasm'],
-                    graphOptimizationLevel: 'all',
-                    executionMode: 'sequential',
-                    enableCpuMemArena: true,
-                    enableMemPattern: true
-                };
-                
-                if (esMobil) {
-                    // Optimizaciones adicionales para móvil
-                    sessionOptions.intraOpNumThreads = 2; // Limitar threads
-                    console.log('⚡ Optimizaciones WASM activadas para móvil');
-                }
-                
-                session = await ort.InferenceSession.create('models/best.onnx', sessionOptions);
-                console.log('✅ MODELO CARGADO - INPUT_SIZE configurado:', INPUT_SIZE);
+                session = await ort.InferenceSession.create('models/best.onnx');
+                console.log('✅ MODELO CARGADO');
                 status.textContent = '✅ Listo - Presiona INICIAR';
             } catch (error) {
                 console.error('❌ ERROR cargando modelo:', error);
@@ -801,7 +783,7 @@
                 return;
             }
 
-            if (deteccionActiva) {
+            if (camaraActiva) {
                 detenerCamara();
                 return;
             }
@@ -814,17 +796,13 @@
                     video: {
                         facingMode: { ideal: 'environment' },
                         width: { ideal: 1920 },
-                        height: { ideal: 1080 },
-                        aspectRatio: { ideal: 16/9 },
-                        frameRate: { ideal: 30, max: 30 } // Limitar FPS
+                        height: { ideal: 1080 }
                     }
                 };
 
-                // Si hay múltiples cámaras, usar la seleccionada
                 if (camarasDisponibles.length > 0) {
                     const camara = camarasDisponibles[camaraActualIndex];
                     constraints.video.deviceId = { exact: camara.deviceId };
-                    console.log('📹 Usando cámara:', camara.label || `Cámara ${camaraActualIndex + 1}`);
                 }
 
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -836,17 +814,13 @@
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     
-                    console.log('📹 Resolución cámara:', video.videoWidth, 'x', video.videoHeight);
-                    console.log('🎯 INPUT_SIZE para modelo:', INPUT_SIZE);
-                    console.log('🎲 Umbral confianza:', CONF_THRESHOLD);
-                    
-                    document.getElementById('status').textContent = '✅ Detectando';
+                    document.getElementById('status').textContent = '✅ Cámara lista - Presiona 📸 para capturar';
                     document.getElementById('btnStart').textContent = '🛑 DETENER CÁMARA';
                     document.getElementById('btnStart').className = 'control-button btn-clear-current';
                     document.getElementById('btnStart').disabled = false;
+                    document.getElementById('btnCapture').style.display = 'flex';
                     
-                    deteccionActiva = true;
-                    detectarConONNX();
+                    camaraActiva = true;
                 };
 
             } catch (error) {
@@ -862,29 +836,13 @@
                 return;
             }
 
-            // Cambiar al siguiente índice (alterna entre frontal y trasera)
             camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
             
-            const cameraActual = camarasDisponibles[camaraActualIndex];
-            const nombreCamara = cameraActual.label || `Cámara ${camaraActualIndex + 1}`;
-            const esFrontal = nombreCamara.toLowerCase().includes('front') || nombreCamara.toLowerCase().includes('frontal');
-            const esTrasera = nombreCamara.toLowerCase().includes('back') || nombreCamara.toLowerCase().includes('rear') || nombreCamara.toLowerCase().includes('trasera');
-            
-            let tipoCamara = 'Cámara ' + (camaraActualIndex + 1);
-            if (esFrontal) tipoCamara = '🤳 Frontal';
-            else if (esTrasera) tipoCamara = '📸 Trasera';
-            
-            console.log('🔄 Cambiando a:', nombreCamara);
-            
-            // Si la cámara está activa, reiniciar con la nueva cámara
             if (stream) {
                 detenerCamara();
-                document.getElementById('status').textContent = `🔄 Cambiando a ${tipoCamara}...`;
                 setTimeout(() => {
                     iniciarCamara();
                 }, 500);
-            } else {
-                document.getElementById('status').textContent = `📹 ${tipoCamara} seleccionada`;
             }
         }
 
@@ -892,28 +850,30 @@
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
-                deteccionActiva = false;
-                procesando = false;
+                camaraActiva = false;
                 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
                 document.getElementById('status').textContent = '⏸️ Detenido';
                 document.getElementById('btnStart').textContent = '🎥 INICIAR CÁMARA';
                 document.getElementById('btnStart').className = 'control-button btn-camera';
+                document.getElementById('btnCapture').style.display = 'none';
             }
         }
 
-        async function detectarConONNX() {
-            if (!deteccionActiva || !session || procesando) {
-                if (deteccionActiva) {
-                    setTimeout(detectarConONNX, deteccionInterval);
-                }
-                return;
-            }
+        async function capturarYDetectar() {
+            if (!camaraActiva || !session) return;
 
-            procesando = true;
+            const btnCapture = document.getElementById('btnCapture');
+            btnCapture.classList.add('processing');
+            btnCapture.textContent = '⏳';
+            btnCapture.disabled = true;
+
+            document.getElementById('status').textContent = '🔍 Analizando...';
 
             try {
+                const startTime = performance.now();
+                
                 const input = preprocesarImagen();
                 const feeds = {};
                 feeds[session.inputNames[0]] = input;
@@ -923,10 +883,8 @@
                 const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
                 const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                 
-                console.log(`🔍 Detecciones encontradas: ${deteccionesFiltradas.length}`);
-                if (deteccionesFiltradas.length > 0) {
-                    console.log('💵 Billetes:', deteccionesFiltradas.map(d => `${d.class} (${(d.conf*100).toFixed(0)}%)`).join(', '));
-                }
+                const endTime = performance.now();
+                console.log(`⏱️ Tiempo: ${(endTime - startTime).toFixed(0)}ms | Detecciones: ${deteccionesFiltradas.length}`);
                 
                 deteccionesActuales = {};
                 for (const det of deteccionesFiltradas) {
@@ -936,12 +894,19 @@
                 actualizarOverlayDeteccion();
                 dibujarDetecciones(deteccionesFiltradas);
                 
+                document.getElementById('status').textContent = 
+                    deteccionesFiltradas.length > 0 ? 
+                    `✅ ${deteccionesFiltradas.length} billetes detectados` : 
+                    '⚠️ No se detectaron billetes';
+                
             } catch (error) {
                 console.error('Error detección:', error);
+                document.getElementById('status').textContent = '❌ Error al procesar';
             }
 
-            procesando = false;
-            setTimeout(detectarConONNX, deteccionInterval);
+            btnCapture.classList.remove('processing');
+            btnCapture.textContent = '📸';
+            btnCapture.disabled = false;
         }
 
         function actualizarOverlayDeteccion() {
@@ -973,17 +938,10 @@
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d', { 
-                willReadFrequently: true,
-                alpha: false,
-                desynchronized: true
-            });
+            const tempCtx = tempCanvas.getContext('2d');
             
-            // Mejor calidad para detección
             tempCtx.imageSmoothingEnabled = true;
             tempCtx.imageSmoothingQuality = 'high';
-            
-            // Dibujar video en canvas
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
@@ -992,12 +950,11 @@
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
             const pixelCount = INPUT_SIZE * INPUT_SIZE;
             
-            // Normalización estándar para YOLO
             for (let i = 0; i < pixelCount; i++) {
                 const idx = i * 4;
-                input[i] = data[idx] / 255.0;                      // R
-                input[pixelCount + i] = data[idx + 1] / 255.0;     // G
-                input[pixelCount * 2 + i] = data[idx + 2] / 255.0; // B
+                input[i] = data[idx] / 255.0;
+                input[pixelCount + i] = data[idx + 1] / 255.0;
+                input[pixelCount * 2 + i] = data[idx + 2] / 255.0;
             }
             
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
@@ -1009,11 +966,6 @@
             const numPredictions = Math.floor(outputData.length / (4 + numClases));
             const scaleX = imgWidth / INPUT_SIZE;
             const scaleY = imgHeight / INPUT_SIZE;
-            
-            console.log(`📊 Procesando ${numPredictions} predicciones...`);
-            let candidatos = 0;
-            let mejorScore = 0;
-            let mejorClase = '';
             
             for (let i = 0; i < numPredictions; i++) {
                 const xCenter = outputData[i];
@@ -1032,17 +984,6 @@
                     }
                 }
                 
-                // Rastrear el mejor score general
-                if (maxScore > mejorScore) {
-                    mejorScore = maxScore;
-                    mejorClase = CLASS_NAMES[maxClassId];
-                }
-                
-                // Contar candidatos cercanos al umbral (50% del umbral)
-                if (maxScore > CONF_THRESHOLD * 0.5) {
-                    candidatos++;
-                }
-                
                 if (maxScore > CONF_THRESHOLD) {
                     const x1 = Math.max(0, (xCenter - width / 2) * scaleX);
                     const y1 = Math.max(0, (yCenter - height / 2) * scaleY);
@@ -1055,16 +996,6 @@
                         bbox: [x1, y1, x2, y2]
                     });
                 }
-            }
-            
-            console.log(`🎯 Candidatos (>50% umbral): ${candidatos}`);
-            console.log(`🏆 Mejor score: ${(mejorScore * 100).toFixed(1)}% - Clase: ${mejorClase}`);
-            console.log(`✅ Sobre umbral ${(CONF_THRESHOLD * 100).toFixed(0)}%: ${detecciones.length}`);
-            
-            // ALERTA: Si hay candidatos pero no detecciones
-            if (candidatos > 0 && detecciones.length === 0) {
-                console.warn(`⚠️ HAY ${candidatos} CANDIDATOS pero NINGUNO supera el umbral ${(CONF_THRESHOLD * 100).toFixed(0)}%`);
-                console.warn(`💡 SUGERENCIA: Baja el umbral a ${(mejorScore * 100).toFixed(0)}% o menos`);
             }
             
             return detecciones;
@@ -1149,27 +1080,17 @@
             
             actualizarHistorialUI();
 
-            // Mostrar feedback visual con borde verde
             const overlay = document.querySelector('.detection-overlay');
             overlay.style.borderTop = '3px solid #00ff88';
             
             document.getElementById('status').textContent = '✅ Guardado en historial';
 
-            // Después de 500ms, limpiar la detección actual
             setTimeout(() => {
                 overlay.style.borderTop = 'none';
-                
-                // Limpiar detección actual
                 deteccionesActuales = {};
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 actualizarOverlayDeteccion();
-                
-                // Mostrar feedback de limpieza
-                document.getElementById('status').textContent = '✅ Guardado y limpiado - Listo para siguiente';
-                
-                setTimeout(() => {
-                    if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-                }, 1500);
+                document.getElementById('status').textContent = '✅ Listo para siguiente captura';
             }, 500);
         }
 
@@ -1178,7 +1099,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             actualizarOverlayDeteccion();
             
-            // Feedback visual
             const overlay = document.querySelector('.detection-overlay');
             overlay.style.borderTop = '3px solid #ffaa00';
             setTimeout(() => {
@@ -1186,9 +1106,6 @@
             }, 500);
 
             document.getElementById('status').textContent = '🗑️ Detección limpiada';
-            setTimeout(() => {
-                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-            }, 1500);
         }
 
         function eliminarDelHistorial(id) {
@@ -1197,11 +1114,6 @@
             historial = historial.filter(item => item.id !== id);
             localStorage.setItem('historial_billetes', JSON.stringify(historial));
             actualizarHistorialUI();
-            
-            document.getElementById('status').textContent = '🗑️ Registro eliminado';
-            setTimeout(() => {
-                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-            }, 1500);
         }
 
         function actualizarHistorialUI() {
@@ -1246,11 +1158,6 @@
                 historial = [];
                 localStorage.removeItem('historial_billetes');
                 actualizarHistorialUI();
-                document.getElementById('status').textContent = '🗑️ Historial limpiado';
-                
-                setTimeout(() => {
-                    if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-                }, 1500);
             }
         }
 
