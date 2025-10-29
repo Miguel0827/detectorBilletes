@@ -498,10 +498,16 @@
                 
                 video.srcObject = stream;
                 
+                // 🔥 CRÍTICO: Forzar reproducción del video
+                await video.play().catch(err => console.warn('Play error:', err));
+                
                 video.onloadedmetadata = function() {
                     // 🚀 OPTIMIZACIÓN: Reducir canvas en dispositivos low-end
                     canvas.width = video.videoWidth * CONFIG.canvasScale;
                     canvas.height = video.videoHeight * CONFIG.canvasScale;
+                    
+                    console.log('📹 Video size:', video.videoWidth, 'x', video.videoHeight);
+                    console.log('🎨 Canvas size:', canvas.width, 'x', canvas.height);
                     
                     console.log('✅ Cámara:', canvas.width, 'x', canvas.height);
                     
