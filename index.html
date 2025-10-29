@@ -1,84 +1,9 @@
-function postprocesarResultados(outputData, imgWidth, imgHeight) {
-            const detecciones = [];
-            const numClases = CLASS_NAMES.length;
-            const totalElements = outputData.length;
-            const numPredictions = Math.floor(totalElements / (4 + numClases));
-            
-            // Pre-calcular factores de escala
-            const scaleX = imgWidth / INPUT_SIZE;
-            const scaleY = imgHeight / INPUT_SIZE;
-            
-            // Solo en primera ejecución
-            if (!window.diagnosticoDone) {
-                console.log('🔍 DEBUG:', {
-                    totalElements,
-                    numClases,
-                    numPredictions,
-                    expectedSize: (4 + numClases) * numPredictions
-                });
-                window.diagnosticoDone = true;
-            }
-            
-            for (let i = 0; i < numPredictions; i++) {
-                const xCenter = outputData[i];
-                const yCenter = outputData[numPredictions + i];
-                const width = outputData[numPredictions * 2 + i];
-                const height = outputData[numPredictions * 3 + i];
-                
-                // Buscar clase con mayor confianza
-                let maxScore = 0;
-                let maxClassId = 0;
-                
-                for (let c = 0; c < numClases; c++) {
-                    const scoreIndex = numPredictions * (4 + c) + i;
-                    const score = outputData[scoreIndex];
-                    
-                    if (score > maxScore) {
-                        maxScore = score;
-                        maxClassId = c;
-                    }
-                }
-                
-                // Filtrar por confianza
-                if (maxScore > CONF_THRESHOLD) {
-                    // Convertir coordenadas normalizadas a píxeles
-                    const x1 = Math.max(0, (xCenter - width / 2) * scaleX);
-                    const y1 = Math.max(0, (yCenter - height / 2) * scaleY);
-                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * scaleX);
-                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * scaleY);
-                    
-                    detecciones.push({
-                        class: CLASS_NAMES[maxClassId],
-                        conf: maxScore,
-                        bbox: [x1, y1, x2, y2]
-                    });
-                    
-                    console.log(`✅ ${CLASS_NAMES[maxClassId]}: ${(maxScore*100).toFixed(1)}%`);
-                }
-            }
-            
-            console.log(`📊 Detecciones válidas: ${detecciones.length}/${numPredictions}`);
-            return detecciones;
-        }                
-                console.log('✅ Stream obtenido');
-                video.srcObject = stream;
-                
-                // Forzar reproducción en móviles
-                video.play().catch(err => {
-                    console.warn('⚠️ Error al reproducir video:', err);
-                });
-                
-                video.onloadedmetadata = function() {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    console.log('✅ Cámara iniciada:', video.videoWidth, 'x', video.<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a1a">
-    <link rel="manifest" href="manifest.json">
     <title>Detector Billetes Pro</title>
     <style>
         * {
@@ -334,7 +259,7 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         </div>
 
         <div class="camera-container">
-            <video id="video" autoplay playsinline></video>
+            <video id="video" autoplay playsinline muted></video>
             <canvas id="canvas"></canvas>
             <div class="camera-controls">
                 <button class="btn-switch-camera" id="btnSwitchCamera" onclick="cambiarCamara()" style="display:none;">
@@ -355,8 +280,8 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             </div>
             <div class="control-row">
                 <label>Velocidad:</label>
-                <input type="range" id="speedSlider" min="1" max="5" value="1" oninput="actualizarVelocidad(this.value)">
-                <span id="speedValue">Lenta</span>
+                <input type="range" id="speedSlider" min="1" max="5" value="2" oninput="actualizarVelocidad(this.value)">
+                <span id="speedValue">Media</span>
             </div>
         </div>
 
@@ -380,33 +305,23 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             <button class="btn-clear" onclick="limpiarTodo()">🗑️ LIMPIAR</button>
         </div>
 
-        <!-- Input oculto para cargar imagen -->
         <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="procesarImagen(this)">
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
     <script>
-        // ⚠️ ORDEN EXACTO DEL YAML - NO CAMBIAR
         const CLASS_NAMES = ['100', '1000', '10000', '100000', '200', '2000', '20000', '50', '500', '5000', '50000'];
         
         const VALORES = {
-            "100": 100,
-            "1000": 1000,
-            "10000": 10000,
-            "100000": 100000,
-            "200": 200,
-            "2000": 2000,
-            "20000": 20000,
-            "50": 50,
-            "500": 500,
-            "5000": 5000,
-            "50000": 50000
+            "100": 100, "1000": 1000, "10000": 10000, "100000": 100000,
+            "200": 200, "2000": 2000, "20000": 20000,
+            "50": 50, "500": 500, "5000": 5000, "50000": 50000
         };
 
-        let CONF_THRESHOLD = 0.5;  // Reducido de 0.6 a 0.5 (50%)
-        const IOU_THRESHOLD = 0.5;  // Reducido para evitar suprimir detecciones válidas
-        const INPUT_SIZE = 640;  // DEBE ser 640 (igual que el entrenamiento)
+        let CONF_THRESHOLD = 0.5;
+        const IOU_THRESHOLD = 0.5;
+        const INPUT_SIZE = 640;
 
         let video, canvas, ctx;
         let stream = null;
@@ -417,13 +332,25 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         let session = null;
         let camarasDisponibles = [];
         let camaraActualIndex = 0;
-        let deteccionInterval = 4000; // Aumentado a 4 segundos por defecto (mejor para móviles)
+        let deteccionInterval = 2500; // Ajustado para móviles
         let procesando = false;
+        let animationFrameId = null;
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .catch(err => console.log('SW error:', err));
-        }
+        // 🚀 OPTIMIZACIÓN MÓVIL: Detectar dispositivo y ajustar configuración
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isLowEnd = isMobile && (navigator.hardwareConcurrency <= 4 || navigator.deviceMemory <= 2);
+
+        // Configuración adaptativa según dispositivo
+        const CONFIG = {
+            videoWidth: isMobile ? 640 : 1280,
+            videoHeight: isMobile ? 480 : 720,
+            canvasScale: isLowEnd ? 0.5 : 1, // Reducir calidad canvas en dispositivos bajos
+            useOffscreen: !isMobile, // OffscreenCanvas solo en desktop
+            detectionInterval: isLowEnd ? 3000 : (isMobile ? 2000 : 1500),
+            maxDetectionsToRender: isMobile ? 20 : 50 // Limitar dibujo en móviles
+        };
+
+        console.log('📱 Dispositivo:', isMobile ? 'Móvil' : 'Desktop', '| Bajo rendimiento:', isLowEnd);
 
         function actualizarConf(value) {
             CONF_THRESHOLD = value / 100;
@@ -444,81 +371,76 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         }
 
         function cargarHistorial() {
-            const saved = localStorage.getItem('historial_billetes');
-            if (saved) {
-                historial = JSON.parse(saved);
-                actualizarHistorialUI();
+            try {
+                const saved = localStorage.getItem('historial_billetes');
+                if (saved) {
+                    historial = JSON.parse(saved);
+                    actualizarHistorialUI();
+                }
+            } catch (e) {
+                console.warn('Error cargando historial:', e);
             }
         }
 
         window.onload = async function() {
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
-            ctx = canvas.getContext('2d');
+            ctx = canvas.getContext('2d', {
+                alpha: false,
+                desynchronized: true, // 🚀 Mejora rendimiento
+                willReadFrequently: false
+            });
             
             cargarHistorial();
             
-            // 🔍 Detectar navegadores problemáticos
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             let navegadorProblematico = false;
             let mensajeNavegador = '';
             
-            // Detectar navegadores in-app
             if (/FBAN|FBAV|Instagram|Line|Snapchat|Twitter|WhatsApp/i.test(userAgent)) {
                 navegadorProblematico = true;
                 mensajeNavegador = '⚠️ Navegador in-app detectado. Abre en Chrome/Safari';
             }
             
-            // Detectar iOS + no Safari
             const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
             const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
             
             if (isIOS && !isSafari) {
                 navegadorProblematico = true;
-                mensajeNavegador = '⚠️ En iOS usa Safari. Chrome/Firefox no tienen acceso a cámara';
+                mensajeNavegador = '⚠️ En iOS usa Safari';
             }
             
             if (navegadorProblematico) {
                 document.getElementById('status').innerHTML = 
-                    `<div class="error">${mensajeNavegador}<br><small>💡 Usa "PROBAR CON IMAGEN" como alternativa</small></div>`;
-                console.warn('⚠️', mensajeNavegador);
+                    `<div class="error">${mensajeNavegador}<br><small>💡 Usa "PROBAR CON IMAGEN"</small></div>`;
             }
             
             try {
-                document.getElementById('status').textContent = navegadorProblematico ? 
-                    mensajeNavegador : 'Cargando modelo...';
-                console.log('🔄 Intentando cargar: models/best.onnx');
+                document.getElementById('status').textContent = 'Cargando modelo...';
                 
-                session = await ort.InferenceSession.create('models/best.onnx');
+                // 🚀 OPTIMIZACIÓN: Configurar WebGL para mejor rendimiento
+                ort.env.wasm.numThreads = isMobile ? 2 : 4;
+                ort.env.wasm.simd = true;
                 
-                // 🔍 DIAGNOSTICO COMPLETO DEL MODELO
-                console.log('═══════════════════════════════════════');
-                console.log('✅ MODELO CARGADO EXITOSAMENTE');
-                console.log('═══════════════════════════════════════');
-                console.log('📥 Input name:', session.inputNames[0]);
-                console.log('📤 Output name:', session.outputNames[0]);
-                console.log('🎯 Clases configuradas:', CLASS_NAMES.length);
-                console.log('📋 Lista de clases:', CLASS_NAMES);
-                console.log('💰 Valores:', VALORES);
-                console.log('🌐 User Agent:', userAgent);
-                console.log('📱 iOS:', isIOS, '| Safari:', isSafari);
-                console.log('═══════════════════════════════════════');
+                session = await ort.InferenceSession.create('models/best.onnx', {
+                    executionProviders: ['wasm'],
+                    graphOptimizationLevel: 'all'
+                });
+                
+                console.log('✅ Modelo cargado | Threads:', ort.env.wasm.numThreads);
                 
                 if (!navegadorProblematico) {
-                    document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
+                    document.getElementById('status').textContent = '✅ Listo';
                 }
             } catch (error) {
-                console.error('❌ ERROR CARGANDO MODELO:', error);
-                console.log('📁 Verifica que existe: models/best.onnx');
-                console.log('🌐 Ruta completa debería ser:', window.location.origin + '/models/best.onnx');
+                console.error('❌ Error modelo:', error);
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ Modelo no encontrado en /models/best.onnx</div>';
+                    '<div class="error">⚠️ Modelo no encontrado</div>';
             }
 
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 camarasDisponibles = devices.filter(d => d.kind === 'videoinput');
-                console.log('Cámaras:', camarasDisponibles.length);
                 
                 if (camarasDisponibles.length > 1) {
                     document.getElementById('btnSwitchCamera').style.display = 'block';
@@ -534,104 +456,54 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 return;
             }
 
-            // Verificar si estamos en HTTPS
             const esHTTPS = window.location.protocol === 'https:';
             const esLocalhost = window.location.hostname === 'localhost' || 
                                window.location.hostname === '127.0.0.1';
             
             if (!esHTTPS && !esLocalhost) {
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ HTTPS requerido para cámara. Usa el botón "PROBAR CON IMAGEN"</div>';
-                console.error('❌ Acceso a cámara bloqueado: se requiere HTTPS');
-                console.log('📍 URL actual:', window.location.href);
-                console.log('💡 Solución: Accede via HTTPS o usa localhost');
+                    '<div class="error">⚠️ HTTPS requerido. Usa "PROBAR CON IMAGEN"</div>';
                 return;
             }
 
             try {
-                document.getElementById('status').textContent = '⏳ Solicitando permisos de cámara...';
+                document.getElementById('status').textContent = '⏳ Solicitando cámara...';
                 document.getElementById('btnStart').disabled = true;
-                
-                console.log('🔄 Iniciando solicitud de cámara...');
-                console.log('📍 Protocolo:', window.location.protocol);
-                console.log('📍 Host:', window.location.hostname);
 
-                // Verificar disponibilidad de getUserMedia
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Tu navegador no soporta acceso a la cámara');
+                if (!navigator.mediaDevices?.getUserMedia) {
+                    throw new Error('Navegador no soporta cámara');
                 }
 
-                // Detectar Android para usar constraints optimizadas
-                const isAndroid = /Android/i.test(navigator.userAgent);
-                
+                // 🚀 CONSTRAINTS OPTIMIZADAS PARA MÓVILES
                 let constraints = {
                     video: {
-                        facingMode: { ideal: 'environment' }  // Cámara trasera preferida
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: CONFIG.videoWidth },
+                        height: { ideal: CONFIG.videoHeight },
+                        frameRate: { ideal: isMobile ? 15 : 30 } // 🚀 Reducir FPS en móviles
                     }
                 };
 
-                // En Android, agregar constraints de calidad media
-                if (isAndroid) {
-                    constraints.video.width = { ideal: 1280 };
-                    constraints.video.height = { ideal: 720 };
-                    console.log('📱 Modo Android detectado');
-                } else {
-                    // En desktop, permitir mayor flexibilidad
-                    constraints.video.width = { ideal: 1280 };
-                    constraints.video.height = { ideal: 720 };
-                }
-
-                // Si hay cámaras disponibles Y estamos en desktop, usar la seleccionada
-                if (camarasDisponibles.length > 0 && !isAndroid) {
+                if (camarasDisponibles.length > 0 && !isMobile) {
                     const camara = camarasDisponibles[camaraActualIndex];
                     constraints.video.deviceId = { ideal: camara.deviceId };
-                    console.log('📹 Intentando usar:', camara.label || `Cámara ${camaraActualIndex + 1}`);
                 }
 
-                console.log('🎥 Solicitando acceso con constraints:', constraints);
-                
-                // Timeout de 15 segundos (Android a veces tarda más)
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout: Sin respuesta del usuario (15s)')), 15000)
-                );
-                
-                console.log('⏳ Esperando permisos del usuario...');
-                
-                // Intentar primero con constraints ideales
                 try {
-                    stream = await Promise.race([
-                        navigator.mediaDevices.getUserMedia(constraints),
-                        timeoutPromise
-                    ]);
-                    console.log('✅ Stream obtenido con constraints ideales');
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
                 } catch (constraintError) {
-                    // Si falla, intentar con constraints mínimas (fallback)
-                    if (constraintError.name === 'OverconstrainedError' || 
-                        constraintError.message.includes('Timeout')) {
-                        console.warn('⚠️ Primer intento falló, probando modo básico...');
-                        
-                        const basicConstraints = {
-                            video: true  // Más básico posible
-                        };
-                        
-                        stream = await navigator.mediaDevices.getUserMedia(basicConstraints);
-                        console.log('✅ Stream obtenido con constraints básicas');
-                    } else {
-                        throw constraintError; // Re-lanzar si es otro error
-                    }
+                    console.warn('⚠️ Intentando constraints básicas...');
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 }
                 
-                console.log('✅ Stream obtenido, configurando video...');
-                console.log('📹 Tracks activos:', stream.getVideoTracks().length);
-                
-                console.log('✅ Stream obtenido');
                 video.srcObject = stream;
                 
                 video.onloadedmetadata = function() {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
+                    // 🚀 OPTIMIZACIÓN: Reducir canvas en dispositivos low-end
+                    canvas.width = video.videoWidth * CONFIG.canvasScale;
+                    canvas.height = video.videoHeight * CONFIG.canvasScale;
                     
-                    console.log('✅ Cámara iniciada:', video.videoWidth, 'x', video.videoHeight);
+                    console.log('✅ Cámara:', canvas.width, 'x', canvas.height);
                     
                     document.getElementById('status').textContent = '✅ Detectando';
                     document.getElementById('btnStart').textContent = '🛑 DETENER';
@@ -643,47 +515,28 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 };
 
             } catch (error) {
-                console.error('❌ Error de cámara:', error);
+                console.error('❌ Error cámara:', error);
                 
                 let mensaje = '❌ ';
                 let sugerencia = '';
                 
-                if (error.message === 'Timeout: Sin respuesta del usuario') {
-                    mensaje += 'No se recibió respuesta. ¿Denegaste el permiso?';
-                    sugerencia = '💡 Recarga la página e intenta de nuevo';
-                } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                    mensaje += 'Permisos de cámara denegados';
-                    sugerencia = '💡 Ve a configuración del navegador y permite el acceso a la cámara';
-                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                    mensaje += 'No se encontró ninguna cámara';
-                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
-                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                    mensaje += 'Cámara ocupada por otra aplicación';
-                    sugerencia = '💡 Cierra otras apps que usen la cámara';
-                } else if (error.name === 'OverconstrainedError') {
-                    mensaje += 'No hay cámara compatible';
-                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
-                } else if (error.name === 'TypeError') {
-                    mensaje += 'Navegador no compatible';
-                    sugerencia = '💡 Intenta con Chrome o Firefox';
+                if (error.name === 'NotAllowedError') {
+                    mensaje += 'Permisos denegados';
+                    sugerencia = '💡 Permite acceso en configuración';
+                } else if (error.name === 'NotFoundError') {
+                    mensaje += 'Cámara no encontrada';
+                    sugerencia = '💡 Usa "PROBAR CON IMAGEN"';
+                } else if (error.name === 'NotReadableError') {
+                    mensaje += 'Cámara ocupada';
+                    sugerencia = '💡 Cierra otras apps';
                 } else {
                     mensaje += error.message;
-                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
+                    sugerencia = '💡 Usa "PROBAR CON IMAGEN"';
                 }
                 
                 document.getElementById('status').innerHTML = 
                     `<div class="error">${mensaje}<br><small>${sugerencia}</small></div>`;
                 document.getElementById('btnStart').disabled = false;
-                
-                console.log('═══════════════════════════════════════');
-                console.log('❌ DIAGNÓSTICO DE ERROR');
-                console.log('═══════════════════════════════════════');
-                console.log('Error:', error.name);
-                console.log('Mensaje:', error.message);
-                console.log('HTTPS:', esHTTPS);
-                console.log('Localhost:', esLocalhost);
-                console.log('UserAgent:', navigator.userAgent);
-                console.log('═══════════════════════════════════════');
             }
         }
 
@@ -703,22 +556,17 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 deteccionActiva = false;
                 procesando = false;
                 
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
                 document.getElementById('status').textContent = '⏸️ Detenido';
                 document.getElementById('btnStart').textContent = '🎥 INICIAR CÁMARA';
                 document.getElementById('btnStart').onclick = iniciarCamara;
             }
-        }
-
-        function iniciarDeteccion() {
-            document.getElementById('status').textContent = '✅ Detectando';
-            document.getElementById('btnStart').textContent = '🛑 DETENER';
-            document.getElementById('btnStart').onclick = detenerCamara;
-            document.getElementById('btnStart').disabled = false;
-            
-            deteccionActiva = true;
-            detectarConONNX();
         }
 
         async function detectarConONNX() {
@@ -730,8 +578,6 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             }
 
             procesando = true;
-            
-            // Indicador visual de procesamiento
             document.getElementById('status').textContent = '🔄 Analizando...';
 
             try {
@@ -745,24 +591,6 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 const output = results[session.outputNames[0]];
                 const outputData = output.data;
                 
-                // 🔍 DIAGNOSTICO (solo primera vez)
-                if (!window.diagnosticoDone2) {
-                    console.log('═══════════════════════════════════════');
-                    console.log('🔍 DIAGNÓSTICO DEL MODELO ONNX');
-                    console.log('═══════════════════════════════════════');
-                    console.log('📊 Shape output:', output.dims);
-                    console.log('📏 Total elementos:', outputData.length);
-                    console.log('🎯 Clases esperadas:', CLASS_NAMES.length);
-                    console.log('📐 Input size:', INPUT_SIZE);
-                    
-                    const numClases = CLASS_NAMES.length;
-                    const numPreds = Math.floor(outputData.length / (4 + numClases));
-                    console.log('🔢 Predicciones calculadas:', numPreds);
-                    console.log('═══════════════════════════════════════');
-                    
-                    window.diagnosticoDone2 = true;
-                }
-                
                 const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
                 const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                 
@@ -772,7 +600,12 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 }
                 
                 actualizarDisplay();
-                dibujarDetecciones(deteccionesFiltradas);
+                
+                // 🚀 OPTIMIZACIÓN: Usar requestAnimationFrame para dibujo suave
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(() => {
+                    dibujarDetecciones(deteccionesFiltradas);
+                });
                 
                 const endTime = performance.now();
                 const processingTime = (endTime - startTime).toFixed(0);
@@ -782,25 +615,25 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 
             } catch (error) {
                 console.error('Error detección:', error);
-                document.getElementById('status').textContent = '⚠️ Error en detección';
+                document.getElementById('status').textContent = '⚠️ Error';
             }
 
             procesando = false;
             setTimeout(detectarConONNX, deteccionInterval);
         }
 
+        // 🚀 OPTIMIZACIÓN: Preprocesamiento más eficiente
         function preprocesarImagen() {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
             const tempCtx = tempCanvas.getContext('2d', { 
-                willReadFrequently: true,
-                alpha: false  // No necesitamos canal alpha
+                alpha: false,
+                willReadFrequently: true
             });
             
-            // Usar interpolación más rápida
             tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'low';  // 'low' es más rápido
+            tempCtx.imageSmoothingQuality = 'low';
             
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
@@ -809,12 +642,12 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
             const pixelCount = INPUT_SIZE * INPUT_SIZE;
             
-            // Optimización: un solo loop
+            // 🚀 Loop optimizado con menos operaciones
             for (let i = 0; i < pixelCount; i++) {
-                const idx = i * 4;
-                input[i] = data[idx] / 255.0;                    // R
-                input[pixelCount + i] = data[idx + 1] / 255.0;  // G
-                input[pixelCount * 2 + i] = data[idx + 2] / 255.0;  // B
+                const idx = i << 2; // i * 4 más rápido
+                input[i] = data[idx] * 0.00392156862745098; // 1/255
+                input[pixelCount + i] = data[idx + 1] * 0.00392156862745098;
+                input[pixelCount * 2 + i] = data[idx + 2] * 0.00392156862745098;
             }
             
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
@@ -823,28 +656,18 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
         function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const detecciones = [];
             const numClases = CLASS_NAMES.length;
-            
-            // YOLOv11 ONNX formato: [1, 4+nc, num_predictions]
-            // Calcular número de predicciones
             const totalElements = outputData.length;
             const numPredictions = Math.floor(totalElements / (4 + numClases));
             
-            console.log('🔍 DEBUG:', {
-                totalElements,
-                numClases,
-                numPredictions,
-                expectedSize: (4 + numClases) * numPredictions
-            });
+            const scaleX = imgWidth / INPUT_SIZE;
+            const scaleY = imgHeight / INPUT_SIZE;
             
             for (let i = 0; i < numPredictions; i++) {
-                // YOLOv11: las coordenadas están en las primeras 4 filas
-                // outputData está organizado como: [x0, x1, x2, ..., y0, y1, y2, ..., w0, w1, ...]
-                const xCenter = outputData[i];                          // Fila 0
-                const yCenter = outputData[numPredictions + i];         // Fila 1
-                const width = outputData[numPredictions * 2 + i];       // Fila 2
-                const height = outputData[numPredictions * 3 + i];      // Fila 3
+                const xCenter = outputData[i];
+                const yCenter = outputData[numPredictions + i];
+                const width = outputData[numPredictions * 2 + i];
+                const height = outputData[numPredictions * 3 + i];
                 
-                // Las probabilidades de clase empiezan en la fila 4
                 let maxScore = 0;
                 let maxClassId = 0;
                 
@@ -858,26 +681,20 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                     }
                 }
                 
-                // Filtrar por confianza
                 if (maxScore > CONF_THRESHOLD) {
-                    // YOLOv11 devuelve coordenadas normalizadas (0-1) relativas a INPUT_SIZE
-                    // Convertir a píxeles del canvas
-                    const x1 = Math.max(0, (xCenter - width / 2) * imgWidth / INPUT_SIZE);
-                    const y1 = Math.max(0, (yCenter - height / 2) * imgHeight / INPUT_SIZE);
-                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * imgWidth / INPUT_SIZE);
-                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * imgHeight / INPUT_SIZE);
+                    const x1 = Math.max(0, (xCenter - width / 2) * scaleX);
+                    const y1 = Math.max(0, (yCenter - height / 2) * scaleY);
+                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * scaleX);
+                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * scaleY);
                     
                     detecciones.push({
                         class: CLASS_NAMES[maxClassId],
                         conf: maxScore,
                         bbox: [x1, y1, x2, y2]
                     });
-                    
-                    console.log(`✅ ${CLASS_NAMES[maxClassId]}: ${(maxScore*100).toFixed(1)}%`);
                 }
             }
             
-            console.log(`📊 Detecciones válidas: ${detecciones.length}/${numPredictions}`);
             return detecciones;
         }
 
@@ -919,14 +736,21 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             return unionArea > 0 ? interArea / unionArea : 0;
         }
 
+        // 🚀 OPTIMIZACIÓN: Dibujo más eficiente
         function dibujarDetecciones(detecciones) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Limitar detecciones a renderizar en móviles
+            const maxRender = Math.min(detecciones.length, CONFIG.maxDetectionsToRender);
+            
             ctx.strokeStyle = '#00ff88';
             ctx.lineWidth = 2;
             ctx.font = 'bold 14px Arial';
             
-            for (const det of detecciones) {
+            for (let i = 0; i < maxRender; i++) {
+                const det = detecciones[i];
                 const [x1, y1, x2, y2] = det.bbox;
+                
                 ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 
                 const label = `${det.class} ${(det.conf * 100).toFixed(0)}%`;
@@ -945,7 +769,7 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                 totalActual += VALORES[billete] * cantidad;
             }
 
-            document.getElementById('total').textContent = `$${totalActual.toLocaleString()}`;
+            document.getElementById('total').textContent = `${totalActual.toLocaleString()}`;
 
             const desgloseDiv = document.getElementById('desglose');
             if (Object.keys(deteccionesActuales).length === 0) {
@@ -956,8 +780,8 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
                     const subtotal = VALORES[billete] * cantidad;
                     html += `
                         <div class="desglose-item">
-                            <span>${cantidad}x $${billete}</span>
-                            <span style="color:#00ff88;font-weight:bold;">$${subtotal.toLocaleString()}</span>
+                            <span>${cantidad}x ${billete}</span>
+                            <span style="color:#00ff88;font-weight:bold;">${subtotal.toLocaleString()}</span>
                         </div>`;
                 }
                 desgloseDiv.innerHTML = html;
@@ -978,13 +802,19 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
 
             historial.unshift(registro);
             if (historial.length > 50) historial = historial.slice(0, 50);
-            localStorage.setItem('historial_billetes', JSON.stringify(historial));
-            actualizarHistorialUI();
-
-            document.getElementById('status').textContent = '✅ Guardado';
-            setTimeout(() => {
-                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-            }, 1500);
+            
+            try {
+                localStorage.setItem('historial_billetes', JSON.stringify(historial));
+                actualizarHistorialUI();
+                
+                document.getElementById('status').textContent = '✅ Guardado';
+                setTimeout(() => {
+                    if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
+                }, 1500);
+            } catch (e) {
+                console.error('Error guardando:', e);
+                alert('⚠️ Error al guardar');
+            }
         }
 
         function actualizarHistorialUI() {
@@ -996,10 +826,10 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
 
             let html = '';
             for (let reg of historial.slice(0, 8)) {
-                const desglose = Object.entries(reg.desglose).map(([b, c]) => `${c}x$${b}`).join(', ');
+                const desglose = Object.entries(reg.desglose).map(([b, c]) => `${c}x${b}`).join(', ');
                 html += `
                     <div class="historial-item">
-                        <strong>$${reg.total.toLocaleString()}</strong><br>
+                        <strong>${reg.total.toLocaleString()}</strong><br>
                         <small>${desglose}</small><br>
                         <small style="color:#888;">${reg.timestamp}</small>
                     </div>`;
@@ -1019,7 +849,6 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             }
         }
 
-        // 🖼️ FUNCIONES PARA PROBAR CON IMAGEN
         function probarConImagen() {
             if (!session) {
                 alert('⚠️ Modelo no cargado');
@@ -1036,40 +865,27 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             
             const img = new Image();
             img.onload = async function() {
-                // Detener cámara si está activa
                 if (stream) detenerCamara();
                 
-                // Ajustar canvas al tamaño de la imagen
-                canvas.width = img.width;
-                canvas.height = img.height;
+                canvas.width = img.width * CONFIG.canvasScale;
+                canvas.height = img.height * CONFIG.canvasScale;
                 
-                // Dibujar imagen en el video (para visualización)
-                const videoCtx = canvas.getContext('2d');
-                videoCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
                 try {
-                    console.log('🔍 Iniciando detección en imagen...');
                     document.getElementById('status').textContent = '🔍 Analizando...';
                     
-                    // Preprocesar imagen
                     const input = preprocesarImagenStatic(img);
                     const feeds = {};
                     feeds[session.inputNames[0]] = input;
                     
-                    // Ejecutar modelo
                     const results = await session.run(feeds);
                     const output = results[session.outputNames[0]];
                     const outputData = output.data;
                     
-                    console.log('📊 Output recibido:', output.dims, 'Elementos:', outputData.length);
-                    
-                    // Procesar detecciones
                     const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
                     const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                     
-                    console.log('✅ Detecciones encontradas:', deteccionesFiltradas.length);
-                    
-                    // Actualizar display
                     deteccionesActuales = {};
                     for (const det of deteccionesFiltradas) {
                         deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
@@ -1097,18 +913,23 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d');
+            const tempCtx = tempCanvas.getContext('2d', { alpha: false });
             
+            tempCtx.imageSmoothingEnabled = true;
+            tempCtx.imageSmoothingQuality = 'low';
             tempCtx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
+            
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
             const { data } = imageData;
             
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+            const pixelCount = INPUT_SIZE * INPUT_SIZE;
             
-            for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
-                input[i] = data[i * 4] / 255.0;
-                input[INPUT_SIZE * INPUT_SIZE + i] = data[i * 4 + 1] / 255.0;
-                input[INPUT_SIZE * INPUT_SIZE * 2 + i] = data[i * 4 + 2] / 255.0;
+            for (let i = 0; i < pixelCount; i++) {
+                const idx = i << 2;
+                input[i] = data[idx] * 0.00392156862745098;
+                input[pixelCount + i] = data[idx + 1] * 0.00392156862745098;
+                input[pixelCount * 2 + i] = data[idx + 2] * 0.00392156862745098;
             }
             
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
@@ -1116,6 +937,7 @@ function postprocesarResultados(outputData, imgWidth, imgHeight) {
 
         window.onbeforeunload = function() {
             if (stream) stream.getTracks().forEach(t => t.stop());
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
         };
     </script>
 </body>
