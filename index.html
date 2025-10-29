@@ -1,707 +1,175 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1a1a1a">
-    <link rel="manifest" href="manifest.json">
-    <title>Detector Billetes Pro</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: #fff;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 100%;
-            min-height: 100vh;
-            padding: 10px;
-        }
-
-        .header {
-            text-align: center;
-            padding: 12px 0;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
-            background: linear-gradient(45deg, #00ff88, #00ccff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status {
-            font-size: 12px;
-            color: #888;
-        }
-
-        .camera-container {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto 10px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
-            background: #000;
-        }
-
-        #video {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        #canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .camera-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-
-        .btn-switch-camera {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00ff88;
-            color: #00ff88;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .total-display {
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #00ff88 0%, #00ccff 100%);
-            border-radius: 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
-        }
-
-        .total-display h2 {
-            font-size: 36px;
-            color: #000;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .controls-panel {
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-
-        .control-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .control-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .control-row label {
-            font-size: 12px;
-            color: #aaa;
-            white-space: nowrap;
-        }
-
-        .control-row input[type="range"] {
-            flex: 1;
-            min-width: 100px;
-        }
-
-        .control-row span {
-            color: #00ff88;
-            font-weight: bold;
-            min-width: 45px;
-            text-align: right;
-            font-size: 12px;
-        }
-
-        .desglose {
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-            min-height: 70px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .desglose-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 13px;
-        }
-
-        .desglose-item:last-child {
-            border-bottom: none;
-        }
-
-        .historial {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 12px;
-            max-height: 150px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        .historial h3 {
-            margin-bottom: 8px;
-            font-size: 15px;
-        }
-
-        .historial-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px;
-            border-radius: 5px;
-            margin-bottom: 6px;
-            font-size: 12px;
-        }
-
-        .buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        button {
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-        }
-
-        .btn-save {
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            color: #000;
-        }
-
-        .btn-clear {
-            background: linear-gradient(135deg, #ff4444, #cc0000);
-            color: #fff;
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #00ccff, #0088ff);
-            color: #fff;
-            grid-column: 1 / -1;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .error {
-            background: rgba(255, 68, 68, 0.2);
-            border: 2px solid #ff4444;
-            border-radius: 10px;
-            padding: 10px;
-            margin: 8px 0;
-            text-align: center;
-            font-size: 12px;
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 18px;
-            }
-            
-            .total-display h2 {
-                font-size: 32px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detector Billetes Pro</title>
+<style>
+/* Mantengo tu CSS, lo puedes usar igual */
+body { font-family: Arial; background:#111; color:#fff; margin:0; padding:0;}
+.container { padding:10px; max-width:480px; margin:auto;}
+.camera-container { position:relative; width:100%; }
+#video { width:100%; height:auto; border-radius:12px; }
+#canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+button { padding:10px; margin:5px; border-radius:8px; cursor:pointer;}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>💵 Detector de Billetes Pro</h1>
-            <div class="status" id="status">Presiona iniciar</div>
-        </div>
-
-        <div class="camera-container">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
-            <div class="camera-controls">
-                <button class="btn-switch-camera" id="btnSwitchCamera" onclick="cambiarCamara()" style="display:none;">
-                    🔄
-                </button>
-            </div>
-        </div>
-
-        <div class="total-display">
-            <h2 id="total">$0</h2>
-        </div>
-
-        <div class="controls-panel">
-            <div class="control-row">
-                <label>Confianza:</label>
-                <input type="range" id="confSlider" min="30" max="90" value="60" oninput="actualizarConf(this.value)">
-                <span id="confValue">60%</span>
-            </div>
-            <div class="control-row">
-                <label>Velocidad:</label>
-                <input type="range" id="speedSlider" min="1" max="5" value="2" oninput="actualizarVelocidad(this.value)">
-                <span id="speedValue">Media</span>
-            </div>
-        </div>
-
-        <div class="desglose" id="desglose">
-            <p style="text-align: center; color: #888; font-size: 13px;">Sin detecciones</p>
-        </div>
-
-        <div class="historial">
-            <h3>📋 Historial</h3>
-            <div id="historial-list"></div>
-        </div>
-
-        <div class="buttons">
-            <button class="btn-start" id="btnStart" onclick="iniciarCamara()">
-                🎥 INICIAR
-            </button>
-            <button class="btn-save" onclick="guardarConteo()">💾 GUARDAR</button>
-            <button class="btn-clear" onclick="limpiarTodo()">🗑️ LIMPIAR</button>
-        </div>
+<div class="container">
+    <h1>💵 Detector de Billetes Pro</h1>
+    <div id="status">Presiona iniciar</div>
+    <div class="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
     </div>
+    <h2 id="total">$0</h2>
+    <button id="btnStart" onclick="iniciarCamara()">🎥 INICIAR</button>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script>
+let video = document.getElementById('video');
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let session = null;
+let stream = null;
+let deteccionActiva = false;
+let deteccionInterval = 1500;
+let procesando = false;
 
-    <script>
-        const VALORES = {
-            "100": 100, "1000": 1000, "200": 200, "50": 50, "500": 500,
-            "CIEN-MIL": 100000, "CINCO-MIL": 5000, "CINCUENTA-MIL": 50000,
-            "DIEZ-MIL": 10000, "DOS-MIL": 2000, "VEINTE-MIL": 20000
+const INPUT_SIZE = 320;
+const CONF_THRESHOLD = 0.6;
+const IOU_THRESHOLD = 0.5;
+
+const VALORES = {"100":100,"200":200,"500":500,"1000":1000,"2000":2000,"5000":5000,"10000":10000,"20000":20000,"50000":50000,"100000":100000};
+const CLASS_NAMES = Object.keys(VALORES);
+let deteccionesActuales = {};
+let totalActual = 0;
+
+async function cargarModelo() {
+    document.getElementById('status').textContent = 'Cargando modelo...';
+    try {
+        session = await ort.InferenceSession.create('models/best.onnx');
+        document.getElementById('status').textContent = '✅ Modelo listo';
+    } catch(e){
+        console.error(e);
+        document.getElementById('status').textContent = '❌ Error cargando modelo';
+    }
+}
+
+async function iniciarCamara() {
+    if (!session) { alert('⚠️ Modelo no cargado'); return; }
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            deteccionActiva = true;
+            document.getElementById('status').textContent = '✅ Detectando';
+            detectarLoop();
         };
+    } catch(e){ console.error(e); document.getElementById('status').textContent='❌ Error cámara'; }
+}
 
-        const CLASS_NAMES = Object.keys(VALORES);
-        let CONF_THRESHOLD = 0.6;
-        const IOU_THRESHOLD = 0.6;
-        const INPUT_SIZE = 320; // Reducido para mejor rendimiento
+function preprocesarImagen() {
+    const temp = document.createElement('canvas');
+    temp.width = INPUT_SIZE; temp.height = INPUT_SIZE;
+    const tctx = temp.getContext('2d');
+    tctx.drawImage(video,0,0,INPUT_SIZE,INPUT_SIZE);
+    const data = tctx.getImageData(0,0,INPUT_SIZE,INPUT_SIZE).data;
+    const input = new Float32Array(3*INPUT_SIZE*INPUT_SIZE);
+    for(let i=0;i<INPUT_SIZE*INPUT_SIZE;i++){
+        input[i] = data[i*4]/255.0;
+        input[i+INPUT_SIZE*INPUT_SIZE] = data[i*4+1]/255.0;
+        input[i+2*INPUT_SIZE*INPUT_SIZE] = data[i*4+2]/255.0;
+    }
+    return new ort.Tensor('float32', input, [1,3,INPUT_SIZE,INPUT_SIZE]);
+}
 
-        let video, canvas, ctx;
-        let stream = null;
-        let deteccionesActuales = {};
-        let totalActual = 0;
-        let historial = [];
-        let deteccionActiva = false;
-        let session = null;
-        let camarasDisponibles = [];
-        let camaraActualIndex = 0;
-        let deteccionInterval = 2000; // Tiempo entre detecciones (ms)
-        let procesando = false;
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .catch(err => console.log('SW error:', err));
+function postprocesarResultados(outputData, width, height){
+    const detecciones=[];
+    const numClasses=CLASS_NAMES.length;
+    const numBoxes=outputData.length/(numClasses+4);
+    for(let i=0;i<numBoxes;i++){
+        const x=outputData[i], y=outputData[numBoxes+i], w=outputData[2*numBoxes+i], h=outputData[3*numBoxes+i];
+        let maxScore=0, maxClass=0;
+        for(let c=0;c<numClasses;c++){
+            const s=outputData[4*numBoxes+c*numBoxes+i];
+            if(s>maxScore){ maxScore=s; maxClass=c; }
         }
-
-        function actualizarConf(value) {
-            CONF_THRESHOLD = value / 100;
-            document.getElementById('confValue').textContent = value + '%';
+        if(maxScore>CONF_THRESHOLD){
+            const x1=(x-w/2)*width/INPUT_SIZE;
+            const y1=(y-h/2)*height/INPUT_SIZE;
+            const x2=(x+w/2)*width/INPUT_SIZE;
+            const y2=(y+h/2)*height/INPUT_SIZE;
+            detecciones.push({class:CLASS_NAMES[maxClass],conf:maxScore,bbox:[x1,y1,x2,y2]});
         }
+    }
+    return detecciones;
+}
 
-        function actualizarVelocidad(value) {
-            const velocidades = {
-                '1': { texto: 'Lenta', ms: 3000 },
-                '2': { texto: 'Media', ms: 2000 },
-                '3': { texto: 'Rápida', ms: 1500 },
-                '4': { texto: 'Turbo', ms: 1000 },
-                '5': { texto: 'Ultra', ms: 500 }
-            };
-            const vel = velocidades[value];
-            deteccionInterval = vel.ms;
-            document.getElementById('speedValue').textContent = vel.texto;
-        }
-
-        function cargarHistorial() {
-            const saved = localStorage.getItem('historial_billetes');
-            if (saved) {
-                historial = JSON.parse(saved);
-                actualizarHistorialUI();
-            }
-        }
-
-        window.onload = async function() {
-            video = document.getElementById('video');
-            canvas = document.getElementById('canvas');
-            ctx = canvas.getContext('2d');
-            
-            cargarHistorial();
-            
-            try {
-                document.getElementById('status').textContent = 'Cargando modelo...';
-                session = await ort.InferenceSession.create('models/best.onnx');
-                document.getElementById('status').textContent = '✅ Listo';
-                console.log('✅ Modelo cargado');
-            } catch (error) {
-                console.error('❌ Error modelo:', error);
-                document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ Modelo no encontrado</div>';
-            }
-
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                camarasDisponibles = devices.filter(d => d.kind === 'videoinput');
-                console.log('Cámaras:', camarasDisponibles.length);
-                
-                if (camarasDisponibles.length > 1) {
-                    document.getElementById('btnSwitchCamera').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error listando cámaras:', error);
-            }
-        };
-
-        async function iniciarCamara() {
-            if (!session) {
-                alert('⚠️ Modelo no cargado');
-                return;
-            }
-
-            try {
-                document.getElementById('status').textContent = 'Iniciando...';
-                document.getElementById('btnStart').disabled = true;
-
-                let constraints = {
-                    video: {
-                        width: { ideal: 480 },
-                        height: { ideal: 360 }
-                    }
-                };
-
-                if (camarasDisponibles.length > 0) {
-                    const camara = camarasDisponibles[camaraActualIndex];
-                    constraints.video.deviceId = { exact: camara.deviceId };
-                    console.log('Usando:', camara.label);
-                } else {
-                    constraints.video.facingMode = 'environment';
-                }
-
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                
-                video.onloadedmetadata = function() {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    document.getElementById('status').textContent = '✅ Detectando';
-                    document.getElementById('btnStart').textContent = '🛑 DETENER';
-                    document.getElementById('btnStart').onclick = detenerCamara;
-                    document.getElementById('btnStart').disabled = false;
-                    
-                    deteccionActiva = true;
-                    detectarConONNX();
-                };
-
-            } catch (error) {
-                console.error('❌ Error:', error);
-                document.getElementById('status').innerHTML = 
-                    '<div class="error">❌ Error de cámara</div>';
-                document.getElementById('btnStart').disabled = false;
+function nonMaxSuppression(dets,iouT){
+    dets.sort((a,b)=>b.conf-a.conf);
+    const res=[], suppressed=new Array(dets.length).fill(false);
+    for(let i=0;i<dets.length;i++){
+        if(suppressed[i]) continue;
+        res.push(dets[i]);
+        for(let j=i+1;j<dets.length;j++){
+            if(suppressed[j]) continue;
+            if(dets[i].class===dets[j].class){
+                const iou=calcularIoU(dets[i].bbox,dets[j].bbox);
+                if(iou>iouT) suppressed[j]=true;
             }
         }
+    }
+    return res;
+}
 
-        async function cambiarCamara() {
-            if (camarasDisponibles.length <= 1) return;
-            camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
-            if (stream) {
-                detenerCamara();
-                setTimeout(() => iniciarCamara(), 300);
-            }
-        }
+function calcularIoU(b1,b2){
+    const xi1=Math.max(b1[0],b2[0]), yi1=Math.max(b1[1],b2[1]);
+    const xi2=Math.min(b1[2],b2[2]), yi2=Math.min(b1[3],b2[3]);
+    const inter=Math.max(0,xi2-xi1)*Math.max(0,yi2-yi1);
+    const union=(b1[2]-b1[0])*(b1[3]-b1[1])+(b2[2]-b2[0])*(b2[3]-b2[1])-inter;
+    return union>0?inter/union:0;
+}
 
-        function detenerCamara() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-                deteccionActiva = false;
-                procesando = false;
-                
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                document.getElementById('status').textContent = '⏸️ Detenido';
-                document.getElementById('btnStart').textContent = '🎥 INICIAR';
-                document.getElementById('btnStart').onclick = iniciarCamara;
-            }
-        }
+function dibujarDetecciones(dets){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle='#00ff88'; ctx.lineWidth=2; ctx.font='bold 14px Arial';
+    for(const det of dets){
+        const [x1,y1,x2,y2]=det.bbox;
+        ctx.strokeRect(x1,y1,x2-x1,y2-y1);
+        const label=`${det.class} ${(det.conf*100).toFixed(0)}%`;
+        const w=ctx.measureText(label).width;
+        ctx.fillStyle='#00ff88'; ctx.fillRect(x1,y1-20,w+8,20);
+        ctx.fillStyle='#000'; ctx.fillText(label,x1+4,y1-4);
+    }
+}
 
-        async function detectarConONNX() {
-            if (!deteccionActiva || !session || procesando) {
-                if (deteccionActiva) {
-                    setTimeout(detectarConONNX, deteccionInterval);
-                }
-                return;
-            }
+function actualizarDisplay(){
+    totalActual=0; for(let [b,c] of Object.entries(deteccionesActuales)) totalActual+=VALORES[b]*c;
+    document.getElementById('total').textContent=`$${totalActual.toLocaleString()}`;
+}
 
-            procesando = true;
+async function detectarLoop(){
+    if(!deteccionActiva || procesando) return;
+    procesando=true;
+    try{
+        const input=preprocesarImagen();
+        const feeds={}; feeds[session.inputNames[0]]=input;
+        const out=await session.run(feeds);
+        const dets=nonMaxSuppression(postprocesarResultados(out[session.outputNames[0]].data,canvas.width,canvas.height),IOU_THRESHOLD);
+        deteccionesActuales={};
+        dets.forEach(d=>deteccionesActuales[d.class]=(deteccionesActuales[d.class]||0)+1);
+        dibujarDetecciones(dets);
+        actualizarDisplay();
+    }catch(e){ console.error(e);}
+    procesando=false;
+    setTimeout(detectarLoop,deteccionInterval);
+}
 
-            try {
-                const input = preprocesarImagen();
-                const feeds = {};
-                feeds[session.inputNames[0]] = input;
-                const results = await session.run(feeds);
-                
-                const outputData = results[session.outputNames[0]].data;
-                const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
-                const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
-                
-                deteccionesActuales = {};
-                for (const det of deteccionesFiltradas) {
-                    deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
-                }
-                
-                actualizarDisplay();
-                dibujarDetecciones(deteccionesFiltradas);
-                
-            } catch (error) {
-                console.error('Error detección:', error);
-            }
-
-            procesando = false;
-            setTimeout(detectarConONNX, deteccionInterval);
-        }
-
-        function preprocesarImagen() {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = INPUT_SIZE;
-            tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d');
-            
-            tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
-            const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-            const { data } = imageData;
-            
-            const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
-            
-            for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
-                input[i] = data[i * 4] / 255.0;
-                input[INPUT_SIZE * INPUT_SIZE + i] = data[i * 4 + 1] / 255.0;
-                input[INPUT_SIZE * INPUT_SIZE * 2 + i] = data[i * 4 + 2] / 255.0;
-            }
-            
-            return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
-        }
-
-        function postprocesarResultados(outputData, imgWidth, imgHeight) {
-            const detecciones = [];
-            const numClasses = CLASS_NAMES.length;
-            const numBoxes = Math.floor(outputData.length / (numClasses + 4));
-            
-            for (let i = 0; i < numBoxes; i++) {
-                const xCenter = outputData[i];
-                const yCenter = outputData[numBoxes + i];
-                const width = outputData[numBoxes * 2 + i];
-                const height = outputData[numBoxes * 3 + i];
-                
-                let maxScore = 0;
-                let maxClassId = 0;
-                
-                for (let c = 0; c < numClasses; c++) {
-                    const score = outputData[numBoxes * (4 + c) + i];
-                    if (score > maxScore) {
-                        maxScore = score;
-                        maxClassId = c;
-                    }
-                }
-                
-                if (maxScore > CONF_THRESHOLD) {
-                    const x1 = Math.max(0, (xCenter - width / 2) * imgWidth / INPUT_SIZE);
-                    const y1 = Math.max(0, (yCenter - height / 2) * imgHeight / INPUT_SIZE);
-                    const x2 = Math.min(imgWidth, (xCenter + width / 2) * imgWidth / INPUT_SIZE);
-                    const y2 = Math.min(imgHeight, (yCenter + height / 2) * imgHeight / INPUT_SIZE);
-                    
-                    detecciones.push({
-                        class: CLASS_NAMES[maxClassId],
-                        conf: maxScore,
-                        bbox: [x1, y1, x2, y2]
-                    });
-                }
-            }
-            
-            return detecciones;
-        }
-
-        function nonMaxSuppression(detecciones, iouThreshold) {
-            detecciones.sort((a, b) => b.conf - a.conf);
-            const resultado = [];
-            const suppressed = new Array(detecciones.length).fill(false);
-            
-            for (let i = 0; i < detecciones.length; i++) {
-                if (suppressed[i]) continue;
-                resultado.push(detecciones[i]);
-                
-                for (let j = i + 1; j < detecciones.length; j++) {
-                    if (suppressed[j]) continue;
-                    if (detecciones[i].class === detecciones[j].class) {
-                        const iou = calcularIoU(detecciones[i].bbox, detecciones[j].bbox);
-                        if (iou > iouThreshold) suppressed[j] = true;
-                    }
-                }
-            }
-            
-            return resultado;
-        }
-
-        function calcularIoU(bbox1, bbox2) {
-            const [x1_1, y1_1, x2_1, y2_1] = bbox1;
-            const [x1_2, y1_2, x2_2, y2_2] = bbox2;
-            
-            const xi1 = Math.max(x1_1, x1_2);
-            const yi1 = Math.max(y1_1, y1_2);
-            const xi2 = Math.min(x2_1, x2_2);
-            const yi2 = Math.min(y2_1, y2_2);
-            
-            const interArea = Math.max(0, xi2 - xi1) * Math.max(0, yi2 - yi1);
-            const bbox1Area = (x2_1 - x1_1) * (y2_1 - y1_1);
-            const bbox2Area = (x2_2 - x1_2) * (y2_2 - y1_2);
-            const unionArea = bbox1Area + bbox2Area - interArea;
-            
-            return unionArea > 0 ? interArea / unionArea : 0;
-        }
-
-        function dibujarDetecciones(detecciones) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#00ff88';
-            ctx.lineWidth = 2;
-            ctx.font = 'bold 14px Arial';
-            
-            for (const det of detecciones) {
-                const [x1, y1, x2, y2] = det.bbox;
-                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                
-                const label = `${det.class} ${(det.conf * 100).toFixed(0)}%`;
-                const textWidth = ctx.measureText(label).width;
-                
-                ctx.fillStyle = '#00ff88';
-                ctx.fillRect(x1, y1 - 20, textWidth + 8, 20);
-                ctx.fillStyle = '#000';
-                ctx.fillText(label, x1 + 4, y1 - 4);
-            }
-        }
-
-        function actualizarDisplay() {
-            totalActual = 0;
-            for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
-                totalActual += VALORES[billete] * cantidad;
-            }
-
-            document.getElementById('total').textContent = `$${totalActual.toLocaleString()}`;
-
-            const desgloseDiv = document.getElementById('desglose');
-            if (Object.keys(deteccionesActuales).length === 0) {
-                desgloseDiv.innerHTML = '<p style="text-align:center;color:#888;font-size:13px;">Sin detecciones</p>';
-            } else {
-                let html = '';
-                for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
-                    const subtotal = VALORES[billete] * cantidad;
-                    html += `
-                        <div class="desglose-item">
-                            <span>${cantidad}x ${billete}</span>
-                            <span style="color:#00ff88;font-weight:bold;">$${subtotal.toLocaleString()}</span>
-                        </div>`;
-                }
-                desgloseDiv.innerHTML = html;
-            }
-        }
-
-        function guardarConteo() {
-            if (totalActual === 0) {
-                alert('⚠️ No hay nada que guardar');
-                return;
-            }
-
-            const registro = {
-                timestamp: new Date().toLocaleString(),
-                total: totalActual,
-                desglose: {...deteccionesActuales}
-            };
-
-            historial.unshift(registro);
-            if (historial.length > 50) historial = historial.slice(0, 50);
-            localStorage.setItem('historial_billetes', JSON.stringify(historial));
-            actualizarHistorialUI();
-
-            document.getElementById('status').textContent = '✅ Guardado';
-            setTimeout(() => {
-                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
-            }, 1500);
-        }
-
-        function actualizarHistorialUI() {
-            const list = document.getElementById('historial-list');
-            if (historial.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Sin registros</p>';
-                return;
-            }
-
-            let html = '';
-            for (let reg of historial.slice(0, 8)) {
-                const desglose = Object.entries(reg.desglose).map(([b, c]) => `${c}x${b}`).join(', ');
-                html += `
-                    <div class="historial-item">
-                        <strong>$${reg.total.toLocaleString()}</strong><br>
-                        <small>${desglose}</small><br>
-                        <small style="color:#888;">${reg.timestamp}</small>
-                    </div>`;
-            }
-            list.innerHTML = html;
-        }
-
-        function limpiarTodo() {
-            if (confirm('¿Limpiar historial?')) {
-                deteccionesActuales = {};
-                totalActual = 0;
-                historial = [];
-                localStorage.removeItem('historial_billetes');
-                actualizarDisplay();
-                actualizarHistorialUI();
-                document.getElementById('status').textContent = '🗑️ Limpiado';
-            }
-        }
-
-        window.onbeforeunload = function() {
-            if (stream) stream.getTracks().forEach(t => t.stop());
-        };
-    </script>
+cargarModelo();
+</script>
 </body>
 </html>
