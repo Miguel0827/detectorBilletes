@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a1a">
-    <meta name="description" content="Detector automático de billetes con IA">
     <link rel="manifest" href="manifest.json">
     <title>Detector Billetes Pro</title>
     <style>
@@ -29,14 +28,14 @@
 
         .header {
             text-align: center;
-            padding: 15px 0;
+            padding: 12px 0;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 5px;
             background: linear-gradient(45deg, #00ff88, #00ccff);
             -webkit-background-clip: text;
@@ -44,7 +43,7 @@
         }
 
         .status {
-            font-size: 14px;
+            font-size: 13px;
             color: #888;
         }
 
@@ -52,8 +51,8 @@
             position: relative;
             width: 100%;
             max-width: 640px;
-            margin: 0 auto 15px;
-            border-radius: 15px;
+            margin: 0 auto 10px;
+            border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
             background: #000;
@@ -74,35 +73,83 @@
             pointer-events: none;
         }
 
+        .camera-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        .btn-switch-camera {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
         .total-display {
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             background: linear-gradient(135deg, #00ff88 0%, #00ccff 100%);
-            border-radius: 15px;
-            margin-bottom: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
             box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
         }
 
         .total-display h2 {
-            font-size: 48px;
+            font-size: 40px;
             color: #000;
             font-weight: bold;
             margin: 0;
         }
 
+        .controls-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .control-item label {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .control-item input[type="range"] {
+            width: 150px;
+        }
+
+        .control-item span {
+            color: #00ff88;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+
         .desglose {
             background: rgba(0, 0, 0, 0.5);
             border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            min-height: 100px;
+            padding: 12px;
+            margin-bottom: 10px;
+            min-height: 80px;
         }
 
         .desglose-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
+            padding: 6px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
         }
 
         .desglose-item:last-child {
@@ -112,37 +159,37 @@
         .historial {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
-            padding: 15px;
-            max-height: 200px;
+            padding: 12px;
+            max-height: 180px;
             overflow-y: auto;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .historial h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
+            margin-bottom: 8px;
+            font-size: 16px;
         }
 
         .historial-item {
             background: rgba(255, 255, 255, 0.05);
-            padding: 10px;
+            padding: 8px;
             border-radius: 5px;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 6px;
+            font-size: 13px;
         }
 
         .buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
         button {
-            padding: 15px;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
@@ -178,47 +225,26 @@
             background: rgba(255, 68, 68, 0.2);
             border: 2px solid #ff4444;
             border-radius: 10px;
-            padding: 15px;
-            margin: 10px 0;
+            padding: 12px;
+            margin: 8px 0;
             text-align: center;
-        }
-
-        .install-prompt {
-            background: linear-gradient(135deg, #00ccff, #0088ff);
-            color: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            display: none;
-            text-align: center;
-        }
-
-        .install-prompt button {
-            background: #fff;
-            color: #0088ff;
-            margin-top: 10px;
-            padding: 10px 20px;
+            font-size: 13px;
         }
 
         @media (max-width: 480px) {
             .total-display h2 {
-                font-size: 36px;
+                font-size: 32px;
             }
             
             button {
-                padding: 12px;
-                font-size: 14px;
+                padding: 10px;
+                font-size: 13px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="install-prompt" id="installPrompt">
-            <p>📱 ¡Instala la app en tu dispositivo!</p>
-            <button onclick="instalarApp()">INSTALAR AHORA</button>
-        </div>
-
         <div class="header">
             <h1>💵 Detector de Billetes Pro</h1>
             <div class="status" id="status">Presiona iniciar para comenzar</div>
@@ -227,14 +253,27 @@
         <div class="camera-container">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
+            <div class="camera-controls">
+                <button class="btn-switch-camera" id="btnSwitchCamera" onclick="cambiarCamara()" style="display:none;">
+                    🔄
+                </button>
+            </div>
         </div>
 
         <div class="total-display">
             <h2 id="total">$0</h2>
         </div>
 
+        <div class="controls-panel">
+            <div class="control-item">
+                <label>Confianza mínima:</label>
+                <input type="range" id="confSlider" min="0" max="100" value="50" oninput="actualizarConf(this.value)">
+                <span id="confValue">50%</span>
+            </div>
+        </div>
+
         <div class="desglose" id="desglose">
-            <p style="text-align: center; color: #888;">Sin detecciones aún</p>
+            <p style="text-align: center; color: #888; font-size: 14px;">Sin detecciones aún</p>
         </div>
 
         <div class="historial">
@@ -251,13 +290,9 @@
         </div>
     </div>
 
-    <!-- ONNX Runtime Web -->
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
     <script>
-        // ========================================
-        // CONFIGURACIÓN
-        // ========================================
         const VALORES = {
             "100": 100,
             "1000": 1000,
@@ -273,11 +308,10 @@
         };
 
         const CLASS_NAMES = Object.keys(VALORES);
-        const CONF_THRESHOLD = 0.5;
+        let CONF_THRESHOLD = 0.5;
         const IOU_THRESHOLD = 0.6;
         const INPUT_SIZE = 640;
 
-        // Variables globales
         let video, canvas, ctx;
         let stream = null;
         let deteccionesActuales = {};
@@ -285,40 +319,20 @@
         let historial = [];
         let deteccionActiva = false;
         let session = null;
-        let deferredPrompt = null;
+        let camarasDisponibles = [];
+        let camaraActualIndex = 0;
 
-        // ========================================
-        // INICIALIZACIÓN
-        // ========================================
-        
-        // Registrar Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
                 .then(reg => console.log('✅ Service Worker registrado'))
                 .catch(err => console.log('❌ Error SW:', err));
         }
 
-        // Prompt de instalación PWA
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installPrompt').style.display = 'block';
-        });
-
-        function instalarApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('✅ App instalada');
-                    }
-                    deferredPrompt = null;
-                    document.getElementById('installPrompt').style.display = 'none';
-                });
-            }
+        function actualizarConf(value) {
+            CONF_THRESHOLD = value / 100;
+            document.getElementById('confValue').textContent = value + '%';
         }
 
-        // Cargar historial
         function cargarHistorial() {
             const saved = localStorage.getItem('historial_billetes');
             if (saved) {
@@ -327,7 +341,6 @@
             }
         }
 
-        // Inicializar cuando cargue la página
         window.onload = async function() {
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
@@ -335,26 +348,34 @@
             
             cargarHistorial();
             
-            // Cargar modelo ONNX
             try {
                 document.getElementById('status').textContent = 'Cargando modelo IA...';
                 session = await ort.InferenceSession.create('models/best.onnx');
                 document.getElementById('status').textContent = '✅ Modelo cargado - Presiona iniciar';
-                console.log('✅ Modelo ONNX cargado exitosamente');
+                console.log('✅ Modelo ONNX cargado');
             } catch (error) {
                 console.error('❌ Error cargando modelo:', error);
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ No se pudo cargar el modelo ONNX.<br>Verifica que "models/best.onnx" exista.</div>';
+                    '<div class="error">⚠️ Modelo no encontrado. Verifica models/best.onnx</div>';
+            }
+
+            // Listar cámaras disponibles
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                camarasDisponibles = devices.filter(device => device.kind === 'videoinput');
+                console.log('Cámaras disponibles:', camarasDisponibles);
+                
+                if (camarasDisponibles.length > 1) {
+                    document.getElementById('btnSwitchCamera').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error listando cámaras:', error);
             }
         };
 
-        // ========================================
-        // CÁMARA
-        // ========================================
-
         async function iniciarCamara() {
             if (!session) {
-                alert('⚠️ El modelo ONNX no está cargado. No se puede iniciar la detección.');
+                alert('⚠️ El modelo ONNX no está cargado.');
                 return;
             }
 
@@ -362,14 +383,24 @@
                 document.getElementById('status').textContent = 'Iniciando cámara...';
                 document.getElementById('btnStart').disabled = true;
 
-                stream = await navigator.mediaDevices.getUserMedia({
+                let constraints = {
                     video: {
-                        facingMode: 'environment',
                         width: { ideal: 640 },
                         height: { ideal: 480 }
                     }
-                });
+                };
 
+                // Usar cámara específica si está disponible
+                if (camarasDisponibles.length > 0) {
+                    const camaraSeleccionada = camarasDisponibles[camaraActualIndex];
+                    constraints.video.deviceId = { exact: camaraSeleccionada.deviceId };
+                    console.log('Usando cámara:', camaraSeleccionada.label);
+                } else {
+                    // Intentar cámara trasera
+                    constraints.video.facingMode = 'environment';
+                }
+
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 
                 video.onloadedmetadata = function() {
@@ -386,10 +417,23 @@
                 };
 
             } catch (error) {
-                console.error('❌ Error accediendo a la cámara:', error);
+                console.error('❌ Error:', error);
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">❌ No se pudo acceder a la cámara.<br>Verifica los permisos en Configuración.</div>';
+                    '<div class="error">❌ No se pudo acceder a la cámara. Verifica permisos.</div>';
                 document.getElementById('btnStart').disabled = false;
+            }
+        }
+
+        async function cambiarCamara() {
+            if (camarasDisponibles.length <= 1) return;
+
+            // Cambiar a siguiente cámara
+            camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
+            
+            // Detener y reiniciar con nueva cámara
+            if (stream) {
+                detenerCamara();
+                setTimeout(() => iniciarCamara(), 300);
             }
         }
 
@@ -407,30 +451,19 @@
             }
         }
 
-        // ========================================
-        // DETECCIÓN CON ONNX (REAL)
-        // ========================================
-
         async function detectarConONNX() {
             if (!deteccionActiva || !session) return;
 
             try {
-                // Preprocesar imagen
                 const input = preprocesarImagen();
-                
-                // Inferencia
                 const feeds = {};
                 feeds[session.inputNames[0]] = input;
                 const results = await session.run(feeds);
                 
-                // Postprocesar
                 const outputData = results[session.outputNames[0]].data;
                 const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
-                
-                // Aplicar NMS
                 const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                 
-                // Actualizar contador
                 deteccionesActuales = {};
                 for (const det of deteccionesFiltradas) {
                     const clase = det.class;
@@ -444,31 +477,26 @@
                 console.error('❌ Error en detección:', error);
             }
 
-            // Continuar detectando
             setTimeout(detectarConONNX, 500);
         }
 
         function preprocesarImagen() {
-            // Crear canvas temporal para redimensionar
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
             const tempCtx = tempCanvas.getContext('2d');
             
-            // Dibujar y redimensionar
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
             const { data } = imageData;
             
-            // Convertir a Float32Array y normalizar [0-255] -> [0-1]
             const input = new Float32Array(1 * 3 * INPUT_SIZE * INPUT_SIZE);
             
             for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
-                const pixelIndex = i * 4; // RGBA
-                // RGB a CHW formato
-                input[i] = data[pixelIndex] / 255.0;                                    // R
-                input[INPUT_SIZE * INPUT_SIZE + i] = data[pixelIndex + 1] / 255.0;     // G
-                input[INPUT_SIZE * INPUT_SIZE * 2 + i] = data[pixelIndex + 2] / 255.0; // B
+                const pixelIndex = i * 4;
+                input[i] = data[pixelIndex] / 255.0;
+                input[INPUT_SIZE * INPUT_SIZE + i] = data[pixelIndex + 1] / 255.0;
+                input[INPUT_SIZE * INPUT_SIZE * 2 + i] = data[pixelIndex + 2] / 255.0;
             }
             
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
@@ -480,13 +508,11 @@
             const numBoxes = outputData.length / (numClasses + 4);
             
             for (let i = 0; i < numBoxes; i++) {
-                // Extraer bbox: [x_center, y_center, width, height]
                 const xCenter = outputData[i];
                 const yCenter = outputData[numBoxes + i];
                 const width = outputData[numBoxes * 2 + i];
                 const height = outputData[numBoxes * 3 + i];
                 
-                // Encontrar clase con mayor score
                 let maxScore = 0;
                 let maxClassId = 0;
                 
@@ -498,9 +524,7 @@
                     }
                 }
                 
-                // Filtrar por confianza
                 if (maxScore > CONF_THRESHOLD) {
-                    // Convertir coordenadas a píxeles
                     const x1 = Math.max(0, (xCenter - width / 2) * imgWidth / INPUT_SIZE);
                     const y1 = Math.max(0, (yCenter - height / 2) * imgHeight / INPUT_SIZE);
                     const x2 = Math.min(imgWidth, (xCenter + width / 2) * imgWidth / INPUT_SIZE);
@@ -519,18 +543,15 @@
 
         function nonMaxSuppression(detecciones, iouThreshold) {
             detecciones.sort((a, b) => b.conf - a.conf);
-            
             const resultado = [];
             const suppressed = new Array(detecciones.length).fill(false);
             
             for (let i = 0; i < detecciones.length; i++) {
                 if (suppressed[i]) continue;
-                
                 resultado.push(detecciones[i]);
                 
                 for (let j = i + 1; j < detecciones.length; j++) {
                     if (suppressed[j]) continue;
-                    
                     if (detecciones[i].class === detecciones[j].class) {
                         const iou = calcularIoU(detecciones[i].bbox, detecciones[j].bbox);
                         if (iou > iouThreshold) {
@@ -562,32 +583,25 @@
 
         function dibujarDetecciones(detecciones) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             ctx.strokeStyle = '#00ff88';
             ctx.lineWidth = 3;
-            ctx.font = 'bold 18px Arial';
+            ctx.font = 'bold 16px Arial';
             
             for (const det of detecciones) {
                 const [x1, y1, x2, y2] = det.bbox;
                 
-                // Rectángulo
                 ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 
-                // Etiqueta con fondo
                 const label = `${det.class} ${(det.conf * 100).toFixed(0)}%`;
                 const textWidth = ctx.measureText(label).width;
                 
                 ctx.fillStyle = '#00ff88';
-                ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+                ctx.fillRect(x1, y1 - 22, textWidth + 10, 22);
                 
                 ctx.fillStyle = '#000';
                 ctx.fillText(label, x1 + 5, y1 - 5);
             }
         }
-
-        // ========================================
-        // DISPLAY Y UI
-        // ========================================
 
         function actualizarDisplay() {
             totalActual = 0;
@@ -599,7 +613,7 @@
 
             const desgloseDiv = document.getElementById('desglose');
             if (Object.keys(deteccionesActuales).length === 0) {
-                desgloseDiv.innerHTML = '<p style="text-align: center; color: #888;">Sin detecciones aún</p>';
+                desgloseDiv.innerHTML = '<p style="text-align: center; color: #888; font-size:14px;">Sin detecciones aún</p>';
             } else {
                 let html = '';
                 for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
@@ -646,7 +660,7 @@
             const historialList = document.getElementById('historial-list');
             
             if (historial.length === 0) {
-                historialList.innerHTML = '<p style="text-align: center; color: #888;">Sin registros</p>';
+                historialList.innerHTML = '<p style="text-align: center; color: #888; font-size:13px;">Sin registros</p>';
                 return;
             }
 
@@ -672,24 +686,13 @@
                 deteccionesActuales = {};
                 totalActual = 0;
                 historial = [];
-                
                 localStorage.removeItem('historial_billetes');
-                
                 actualizarDisplay();
                 actualizarHistorialUI();
-                
                 document.getElementById('status').textContent = '🗑️ Todo limpiado';
-                setTimeout(() => {
-                    if (deteccionActiva) {
-                        document.getElementById('status').textContent = '✅ Cámara activa - Detectando...';
-                    } else {
-                        document.getElementById('status').textContent = 'Presiona iniciar para comenzar';
-                    }
-                }, 2000);
             }
         }
 
-        // Limpiar al cerrar
         window.onbeforeunload = function() {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
