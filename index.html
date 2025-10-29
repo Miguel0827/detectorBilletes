@@ -259,7 +259,7 @@
         </div>
 
         <div class="camera-container">
-            <video id="video" autoplay playsinline muted></video>
+            <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
             <div class="camera-controls">
                 <button class="btn-switch-camera" id="btnSwitchCamera" onclick="cambiarCamara()" style="display:none;">
@@ -280,8 +280,8 @@
             </div>
             <div class="control-row">
                 <label>Velocidad:</label>
-                <input type="range" id="speedSlider" min="1" max="5" value="2" oninput="actualizarVelocidad(this.value)">
-                <span id="speedValue">Media</span>
+                <input type="range" id="speedSlider" min="1" max="5" value="1" oninput="actualizarVelocidad(this.value)">
+                <span id="speedValue">Lenta</span>
             </div>
         </div>
 
@@ -332,7 +332,7 @@
         let session = null;
         let camarasDisponibles = [];
         let camaraActualIndex = 0;
-        let deteccionInterval = 2500; // ⚡ OPTIMIZADO: 2.5s por defecto
+        let deteccionInterval = 4000; // Por defecto 4 segundos (mejor móviles)
         let procesando = false;
 
         // 🚀 OPTIMIZACIÓN: Detectar móvil para ajustar threads
@@ -442,8 +442,10 @@
                 console.log('✅ Stream obtenido');
                 video.srcObject = stream;
                 
-                // Forzar reproducción
-                video.play().catch(err => console.warn('Play error:', err));
+                // Forzar reproducción en móviles
+                video.play().catch(err => {
+                    console.warn('⚠️ Error al reproducir video:', err);
+                });
                 
                 video.onloadedmetadata = function() {
                     canvas.width = video.videoWidth;
@@ -552,18 +554,18 @@
             setTimeout(detectarConONNX, deteccionInterval);
         }
 
-        // 🚀 OPTIMIZADO: Preprocesamiento más eficiente
-        function preprocesarImagen() {
+                function preprocesarImagen() {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = INPUT_SIZE;
             tempCanvas.height = INPUT_SIZE;
             const tempCtx = tempCanvas.getContext('2d', { 
-                alpha: false,
-                willReadFrequently: true
+                willReadFrequently: true,
+                alpha: false
             });
             
+            // 🚀 OPTIMIZACIÓN: Interpolación más rápida
             tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'low'; // 🚀 Más rápido
+            tempCtx.imageSmoothingQuality = 'low';
             
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
@@ -572,7 +574,7 @@
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
             const pixelCount = INPUT_SIZE * INPUT_SIZE;
             
-            // 🚀 Loop optimizado
+            // 🚀 OPTIMIZACIÓN: Loop más eficiente con precálculo
             const inv255 = 1 / 255;
             for (let i = 0; i < pixelCount; i++) {
                 const idx = i * 4;
