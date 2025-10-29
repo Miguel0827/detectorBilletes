@@ -725,10 +725,11 @@
 
             if (esMobil) {
                 // Optimizaciones para móvil
-                INPUT_SIZE = 416; // Tamaño intermedio para mejor detección
-                deteccionInterval = 2000; // Más tiempo entre detecciones
-                CONF_THRESHOLD = 0.35; // Umbral de confianza más bajo
+                INPUT_SIZE = 640; // Usar tamaño completo del modelo
+                deteccionInterval = 3000; // Más tiempo para procesar mejor
+                CONF_THRESHOLD = 0.25; // Umbral muy bajo para móvil
                 console.log('📱 Modo móvil activado - INPUT_SIZE:', INPUT_SIZE);
+                console.log('🎯 Umbral confianza reducido a:', CONF_THRESHOLD);
 
                 try {
                     // Solicitar permisos temporalmente
