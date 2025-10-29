@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a1a">
-    <link rel="manifest" href="manifest.json">
     <title>Detector Billetes Pro</title>
     <style>
         * {
@@ -17,51 +16,132 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             color: #fff;
-            overflow-x: hidden;
+            overflow: hidden;
+            height: 100vh;
         }
 
-        .container {
-            max-width: 100%;
-            min-height: 100vh;
-            padding: 10px;
+        .main-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .header {
+        /* Cámara Central Fija */
+        .camera-wrapper {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            max-width: 90vw;
+            max-height: 70vh;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+            background: #000;
+        }
+
+        /* Overlay de Detección sobre la cámara */
+        .detection-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.8) 70%, transparent 100%);
+            padding: 15px;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+
+        .detection-value {
             text-align: center;
-            padding: 12px 0;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
             margin-bottom: 10px;
         }
 
-        .header h1 {
-            font-size: 20px;
+        .detection-value-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
             margin-bottom: 5px;
-            background: linear-gradient(45deg, #00ff88, #00ccff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
-        .status {
-            font-size: 12px;
+        .detection-value-label {
+            font-size: 11px;
             color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .camera-container {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto 10px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
-            background: #000;
+        .detection-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 12px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        .detection-badge {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #00ff88;
+            white-space: nowrap;
+        }
+
+        .detection-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-overlay {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-overlay-save {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+        }
+
+        .btn-overlay-clear {
+            background: rgba(255, 170, 0, 0.3);
+            border: 1px solid #ffaa00;
+            color: #ffaa00;
+        }
+
+        .btn-overlay:active {
+            transform: scale(0.95);
+        }
+
+        .btn-overlay:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .detection-empty {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            padding: 5px;
         }
 
         #video {
             width: 100%;
-            height: auto;
-            display: block;
+            height: 100%;
+            object-fit: cover;
         }
 
         #canvas {
@@ -73,52 +153,194 @@
             pointer-events: none;
         }
 
-        .camera-controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-
-        .btn-switch-camera {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00ff88;
-            color: #00ff88;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 18px;
+        /* Botón Menú Izquierdo */
+        .btn-menu-left {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #00ccff, #0088ff);
+            border: none;
+            color: #fff;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
             cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 204, 255, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
         }
 
-        .total-display {
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #00ff88 0%, #00ccff 100%);
-            border-radius: 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        .btn-menu-left:hover {
+            transform: translateY(-50%) scale(1.1);
         }
 
-        .total-display h2 {
-            font-size: 36px;
+        .btn-menu-left:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* Botón Menú Derecho */
+        .btn-menu-right {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            border: none;
             color: #000;
-            font-weight: bold;
-            margin: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
         }
 
-        .controls-panel {
-            background: rgba(0, 0, 0, 0.5);
+        .btn-menu-right:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .btn-menu-right:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* Panel Izquierdo - Controles */
+        .panel-left {
+            position: fixed;
+            left: -350px;
+            top: 0;
+            width: 350px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            transition: left 0.3s ease;
+            z-index: 200;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-left.open {
+            left: 0;
+        }
+
+        /* Panel Derecho - Historial */
+        .panel-right {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            transition: right 0.3s ease;
+            z-index: 200;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-right.open {
+            right: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-header h2 {
+            font-size: 24px;
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-close {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-close:hover {
+            background: rgba(255, 68, 68, 0.4);
+        }
+
+        /* Botones del Panel Izquierdo */
+        .control-button {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: none;
             border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-camera {
+            background: linear-gradient(135deg, #00ccff, #0088ff);
+            color: #fff;
+        }
+
+        .btn-image {
+            background: linear-gradient(135deg, #ff9500, #ff5e00);
+            color: #fff;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+        }
+
+        .btn-clear-current {
+            background: linear-gradient(135deg, #ffaa00, #ff6600);
+            color: #fff;
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+        }
+
+        .control-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Controles de Ajustes */
+        .control-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-panel h3 {
+            font-size: 14px;
+            color: #00ff88;
+            margin-bottom: 12px;
         }
 
         .control-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .control-row:last-child {
@@ -126,76 +348,62 @@
         }
 
         .control-row label {
-            font-size: 12px;
+            font-size: 13px;
             color: #aaa;
-            white-space: nowrap;
         }
 
         .control-row input[type="range"] {
             flex: 1;
-            min-width: 100px;
+            margin: 0 10px;
         }
 
         .control-row span {
             color: #00ff88;
             font-weight: bold;
-            min-width: 45px;
+            min-width: 50px;
             text-align: right;
-            font-size: 12px;
+            font-size: 13px;
         }
 
-        .detecciones-actuales {
+        /* Status */
+        .status-panel {
+            background: rgba(0, 204, 255, 0.1);
+            border: 1px solid rgba(0, 204, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 13px;
+            color: #00ccff;
+        }
+
+        /* Historial */
+        .historial-header {
             background: rgba(0, 255, 136, 0.1);
-            border: 2px solid rgba(0, 255, 136, 0.3);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-            min-height: 60px;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
         }
 
-        .detecciones-actuales h3 {
-            font-size: 14px;
+        .historial-total {
+            font-size: 36px;
+            font-weight: bold;
             color: #00ff88;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 5px;
         }
 
-        .badge-temp {
-            background: rgba(0, 255, 136, 0.2);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: normal;
-        }
-
-        .historial {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 12px;
-            max-height: 250px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        .historial h3 {
-            margin-bottom: 8px;
-            font-size: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .historial-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
         }
 
         .historial-item {
             background: rgba(255, 255, 255, 0.05);
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 10px;
             transition: all 0.2s;
         }
 
@@ -203,20 +411,28 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        .historial-item-info {
-            flex: 1;
+        .historial-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
         .historial-item-valor {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             color: #00ff88;
-            margin-bottom: 4px;
+        }
+
+        .historial-item-desglose {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 5px;
         }
 
         .historial-item-fecha {
             font-size: 11px;
-            color: #888;
+            color: #666;
         }
 
         .btn-eliminar {
@@ -234,105 +450,133 @@
             background: rgba(255, 68, 68, 0.4);
         }
 
-        .deteccion-temp-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            font-size: 13px;
-            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
-        }
-
-        .deteccion-temp-item:last-child {
-            border-bottom: none;
-        }
-
-        .buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        button {
-            padding: 10px;
+        .btn-limpiar-historial {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: #fff;
             border: none;
             border-radius: 8px;
             font-size: 13px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s;
+            margin-top: 15px;
             text-transform: uppercase;
         }
 
-        .btn-save {
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            color: #000;
-        }
-
-        .btn-clear {
-            background: linear-gradient(135deg, #ff4444, #cc0000);
-            color: #fff;
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #00ccff, #0088ff);
-            color: #fff;
-            grid-column: 1 / -1;
-        }
-
-        button:active {
+        .btn-limpiar-historial:active {
             transform: scale(0.95);
         }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .error {
-            background: rgba(255, 68, 68, 0.2);
-            border: 2px solid #ff4444;
-            border-radius: 10px;
-            padding: 10px;
-            margin: 8px 0;
+        .empty-message {
             text-align: center;
-            font-size: 12px;
+            color: #666;
+            font-size: 13px;
+            padding: 30px 20px;
         }
 
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 18px;
+        /* Overlay para cerrar menús */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .panel-left, .panel-right {
+                width: 90vw;
             }
-            
-            .total-display h2 {
-                font-size: 32px;
+
+            .btn-menu-left, .btn-menu-right {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
             }
+
+            .btn-menu-left {
+                left: 10px;
+            }
+
+            .btn-menu-right {
+                right: 10px;
+            }
+        }
+
+        input[type="file"] {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>💵 Detector de Billetes Pro</h1>
-            <div class="status" id="status">Presiona iniciar</div>
-        </div>
-
-        <div class="camera-container">
+    <!-- Cámara Central -->
+    <div class="main-container">
+        <div class="camera-wrapper">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
-            <div class="camera-controls">
-                <button class="btn-switch-camera" id="btnSwitchCamera" onclick="cambiarCamara()" style="display:none;">
-                    🔄
-                </button>
+            
+            <!-- Overlay de Detección -->
+            <div class="detection-overlay">
+                <div class="detection-value">
+                    <div class="detection-value-amount" id="detectionAmount">$0</div>
+                    <div class="detection-value-label">Detección Actual</div>
+                </div>
+                
+                <div class="detection-items" id="detectionItems">
+                    <div class="detection-empty">Sin detecciones</div>
+                </div>
+                
+                <div class="detection-actions">
+                    <button class="btn-overlay btn-overlay-save" onclick="guardarDeteccionActual()" id="btnGuardarOverlay">
+                        💾 GUARDAR
+                    </button>
+                    <button class="btn-overlay btn-overlay-clear" onclick="limpiarDeteccionActual()" id="btnLimpiarOverlay">
+                        🗑️ LIMPIAR
+                    </button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="total-display">
-            <h2 id="total">$0</h2>
+    <!-- Botón Menú Izquierdo -->
+    <button class="btn-menu-left" onclick="togglePanelLeft()">⚙️</button>
+
+    <!-- Botón Menú Derecho -->
+    <button class="btn-menu-right" onclick="togglePanelRight()">💰</button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="closePanels()"></div>
+
+    <!-- Panel Izquierdo - Controles -->
+    <div class="panel-left" id="panelLeft">
+        <div class="panel-header">
+            <h2>⚙️ Controles</h2>
+            <button class="btn-close" onclick="togglePanelLeft()">✕</button>
         </div>
 
-        <div class="controls-panel">
+        <div class="status-panel" id="status">
+            Presiona iniciar cámara
+        </div>
+
+        <button class="control-button btn-camera" id="btnStart" onclick="iniciarCamara()">
+            🎥 INICIAR CÁMARA
+        </button>
+
+        <button class="control-button btn-image" onclick="probarConImagen()">
+            🖼️ PROBAR CON IMAGEN
+        </button>
+
+        <div class="control-panel">
+            <h3>🎯 Ajustes de Detección</h3>
             <div class="control-row">
                 <label>Confianza:</label>
                 <input type="range" id="confSlider" min="20" max="90" value="50" oninput="actualizarConf(this.value)">
@@ -344,63 +588,39 @@
                 <span id="speedValue">Lenta</span>
             </div>
         </div>
-
-        <div class="detecciones-actuales">
-            <h3>
-                🔍 Detección Actual
-                <span class="badge-temp">Temporal</span>
-            </h3>
-            <div id="desglose">
-                <p style="text-align: center; color: #888; font-size: 13px;">Sin detecciones</p>
-            </div>
-        </div>
-
-        <div class="historial">
-            <h3>
-                💰 Historial de Conteo
-                <span style="font-size: 12px; font-weight: normal; color: #888;">Total: <span id="total-historial" style="color: #00ff88;">$0</span></span>
-            </h3>
-            <div id="historial-list">
-                <p style="text-align:center;color:#888;font-size:12px;">Sin registros guardados</p>
-            </div>
-        </div>
-
-        <div class="buttons">
-            <button class="btn-start" id="btnStart" onclick="iniciarCamara()">
-                🎥 INICIAR CÁMARA
-            </button>
-            <button class="btn-start" style="background: linear-gradient(135deg, #ff9500, #ff5e00);" onclick="probarConImagen()">
-                🖼️ PROBAR CON IMAGEN
-            </button>
-            <button class="btn-save" onclick="guardarDeteccionActual()">
-                💾 GUARDAR DETECCIÓN
-            </button>
-            <button class="btn-clear" onclick="limpiarHistorial()">
-                🗑️ LIMPIAR TODO
-            </button>
-        </div>
-
-        <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="procesarImagen(this)">
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <!-- Panel Derecho - Historial -->
+    <div class="panel-right" id="panelRight">
+        <div class="panel-header">
+            <h2>💰 Historial</h2>
+            <button class="btn-close" onclick="togglePanelRight()">✕</button>
+        </div>
 
+        <div class="historial-header">
+            <div class="historial-total" id="totalHistorial">$0</div>
+            <div class="historial-label">Total Acumulado</div>
+        </div>
+
+        <div id="historialList">
+            <div class="empty-message">No hay registros guardados</div>
+        </div>
+
+        <button class="btn-limpiar-historial" onclick="limpiarHistorial()">
+            🗑️ LIMPIAR TODO EL HISTORIAL
+        </button>
+    </div>
+
+    <input type="file" id="imageInput" accept="image/*" onchange="procesarImagen(this)">
+
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <script>
-        // ⚠️ ORDEN EXACTO DEL YAML - NO CAMBIAR
         const CLASS_NAMES = ['100', '1000', '10000', '100000', '200', '2000', '20000', '50', '500', '5000', '50000'];
         
         const VALORES = {
-            "100": 100,
-            "1000": 1000,
-            "10000": 10000,
-            "100000": 100000,
-            "200": 200,
-            "2000": 2000,
-            "20000": 20000,
-            "50": 50,
-            "500": 500,
-            "5000": 5000,
-            "50000": 50000
+            "100": 100, "1000": 1000, "10000": 10000, "100000": 100000,
+            "200": 200, "2000": 2000, "20000": 20000,
+            "50": 50, "500": 500, "5000": 5000, "50000": 50000
         };
 
         let CONF_THRESHOLD = 0.5;
@@ -410,18 +630,47 @@
         let video, canvas, ctx;
         let stream = null;
         let deteccionesActuales = {};
-        let totalActual = 0;
         let historial = [];
         let deteccionActiva = false;
         let session = null;
-        let camarasDisponibles = [];
-        let camaraActualIndex = 0;
         let deteccionInterval = 4000;
         let procesando = false;
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .catch(err => console.log('SW error:', err));
+        // Funciones de Menús
+        function togglePanelLeft() {
+            const panel = document.getElementById('panelLeft');
+            const overlay = document.getElementById('overlay');
+            const panelRight = document.getElementById('panelRight');
+            
+            panel.classList.toggle('open');
+            
+            if (panel.classList.contains('open')) {
+                overlay.classList.add('active');
+                panelRight.classList.remove('open');
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function togglePanelRight() {
+            const panel = document.getElementById('panelRight');
+            const overlay = document.getElementById('overlay');
+            const panelLeft = document.getElementById('panelLeft');
+            
+            panel.classList.toggle('open');
+            
+            if (panel.classList.contains('open')) {
+                overlay.classList.add('active');
+                panelLeft.classList.remove('open');
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function closePanels() {
+            document.getElementById('panelLeft').classList.remove('open');
+            document.getElementById('panelRight').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
         }
 
         function actualizarConf(value) {
@@ -460,70 +709,18 @@
             ctx = canvas.getContext('2d');
             
             cargarHistorial();
-            
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            let navegadorProblematico = false;
-            let mensajeNavegador = '';
-            
-            if (/FBAN|FBAV|Instagram|Line|Snapchat|Twitter|WhatsApp/i.test(userAgent)) {
-                navegadorProblematico = true;
-                mensajeNavegador = '⚠️ Navegador in-app detectado. Abre en Chrome/Safari';
-            }
-            
-            const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-            const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
-            
-            if (isIOS && !isSafari) {
-                navegadorProblematico = true;
-                mensajeNavegador = '⚠️ En iOS usa Safari. Chrome/Firefox no tienen acceso a cámara';
-            }
-            
-            if (navegadorProblematico) {
-                document.getElementById('status').innerHTML = 
-                    `<div class="error">${mensajeNavegador}<br><small>💡 Usa "PROBAR CON IMAGEN" como alternativa</small></div>`;
-                console.warn('⚠️', mensajeNavegador);
-            }
+            actualizarOverlayDeteccion(); // Inicializar overlay
             
             try {
-                document.getElementById('status').textContent = navegadorProblematico ? 
-                    mensajeNavegador : 'Cargando modelo...';
-                console.log('🔄 Intentando cargar: models/best.onnx');
-                
+                document.getElementById('status').textContent = 'Cargando modelo...';
                 session = await ort.InferenceSession.create('models/best.onnx');
                 
-                console.log('╔═══════════════════════════════════════╗');
-                console.log('✅ MODELO CARGADO EXITOSAMENTE');
-                console.log('╚═══════════════════════════════════════╝');
-                console.log('🔥 Input name:', session.inputNames[0]);
-                console.log('📤 Output name:', session.outputNames[0]);
-                console.log('🎯 Clases configuradas:', CLASS_NAMES.length);
-                console.log('📋 Lista de clases:', CLASS_NAMES);
-                console.log('💰 Valores:', VALORES);
-                console.log('🌐 User Agent:', userAgent);
-                console.log('📱 iOS:', isIOS, '| Safari:', isSafari);
-                console.log('╚═══════════════════════════════════════╝');
-                
-                if (!navegadorProblematico) {
-                    document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
-                }
+                console.log('✅ MODELO CARGADO');
+                document.getElementById('status').textContent = '✅ Listo - Presiona INICIAR';
             } catch (error) {
-                console.error('❌ ERROR CARGANDO MODELO:', error);
-                console.log('🔍 Verifica que existe: models/best.onnx');
-                console.log('🌐 Ruta completa debería ser:', window.location.origin + '/models/best.onnx');
+                console.error('❌ ERROR:', error);
                 document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ Modelo no encontrado en /models/best.onnx</div>';
-            }
-
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                camarasDisponibles = devices.filter(d => d.kind === 'videoinput');
-                console.log('Cámaras:', camarasDisponibles.length);
-                
-                if (camarasDisponibles.length > 1) {
-                    document.getElementById('btnSwitchCamera').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error listando cámaras:', error);
+                    '⚠️ Modelo no encontrado';
             }
         };
 
@@ -533,102 +730,35 @@
                 return;
             }
 
-            const esHTTPS = window.location.protocol === 'https:';
-            const esLocalhost = window.location.hostname === 'localhost' || 
-                               window.location.hostname === '127.0.0.1';
-            
-            if (!esHTTPS && !esLocalhost) {
-                document.getElementById('status').innerHTML = 
-                    '<div class="error">⚠️ HTTPS requerido para cámara. Usa el botón "PROBAR CON IMAGEN"</div>';
-                console.error('❌ Acceso a cámara bloqueado: se requiere HTTPS');
-                console.log('🔍 URL actual:', window.location.href);
-                console.log('💡 Solución: Accede via HTTPS o usa localhost');
+            if (deteccionActiva) {
+                detenerCamara();
                 return;
             }
 
             try {
-                document.getElementById('status').textContent = '⏳ Solicitando permisos de cámara...';
+                document.getElementById('status').textContent = '⏳ Iniciando cámara...';
                 document.getElementById('btnStart').disabled = true;
-                
-                console.log('🔄 Iniciando solicitud de cámara...');
-                console.log('🔍 Protocolo:', window.location.protocol);
-                console.log('🔍 Host:', window.location.hostname);
 
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Tu navegador no soporta acceso a la cámara');
-                }
-
-                const isAndroid = /Android/i.test(navigator.userAgent);
-                
-                let constraints = {
+                const constraints = {
                     video: {
-                        facingMode: { ideal: 'environment' }
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     }
                 };
 
-                if (isAndroid) {
-                    constraints.video.width = { ideal: 1280 };
-                    constraints.video.height = { ideal: 720 };
-                    console.log('📱 Modo Android detectado');
-                } else {
-                    constraints.video.width = { ideal: 1280 };
-                    constraints.video.height = { ideal: 720 };
-                }
-
-                if (camarasDisponibles.length > 0 && !isAndroid) {
-                    const camara = camarasDisponibles[camaraActualIndex];
-                    constraints.video.deviceId = { ideal: camara.deviceId };
-                    console.log('📹 Intentando usar:', camara.label || `Cámara ${camaraActualIndex + 1}`);
-                }
-
-                console.log('🎥 Solicitando acceso con constraints:', constraints);
-                
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout: Sin respuesta del usuario (15s)')), 15000)
-                );
-                
-                console.log('⏳ Esperando permisos del usuario...');
-                
-                try {
-                    stream = await Promise.race([
-                        navigator.mediaDevices.getUserMedia(constraints),
-                        timeoutPromise
-                    ]);
-                    console.log('✅ Stream obtenido con constraints ideales');
-                } catch (constraintError) {
-                    if (constraintError.name === 'OverconstrainedError' || 
-                        constraintError.message.includes('Timeout')) {
-                        console.warn('⚠️ Primer intento falló, probando modo básico...');
-                        
-                        const basicConstraints = {
-                            video: true
-                        };
-                        
-                        stream = await navigator.mediaDevices.getUserMedia(basicConstraints);
-                        console.log('✅ Stream obtenido con constraints básicas');
-                    } else {
-                        throw constraintError;
-                    }
-                }
-                
-                console.log('✅ Stream obtenido, configurando video...');
-                console.log('📹 Tracks activos:', stream.getVideoTracks().length);
-                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 
-                video.play().catch(err => {
-                    console.warn('⚠️ Error al reproducir video:', err);
-                });
+                video.play().catch(err => console.warn('Error video:', err));
                 
                 video.onloadedmetadata = function() {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     
-                    console.log('✅ Cámara iniciada:', video.videoWidth, 'x', video.videoHeight);
-                    
                     document.getElementById('status').textContent = '✅ Detectando';
-                    document.getElementById('btnStart').textContent = '🛑 DETENER';
-                    document.getElementById('btnStart').onclick = detenerCamara;
+                    document.getElementById('btnStart').textContent = '🛑 DETENER CÁMARA';
+                    document.getElementById('btnStart').className = 'control-button btn-clear-current';
                     document.getElementById('btnStart').disabled = false;
                     
                     deteccionActiva = true;
@@ -636,56 +766,9 @@
                 };
 
             } catch (error) {
-                console.error('❌ Error de cámara:', error);
-                
-                let mensaje = '❌ ';
-                let sugerencia = '';
-                
-                if (error.message === 'Timeout: Sin respuesta del usuario') {
-                    mensaje += 'No se recibió respuesta. ¿Denegaste el permiso?';
-                    sugerencia = '💡 Recarga la página e intenta de nuevo';
-                } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                    mensaje += 'Permisos de cámara denegados';
-                    sugerencia = '💡 Ve a configuración del navegador y permite el acceso a la cámara';
-                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                    mensaje += 'No se encontró ninguna cámara';
-                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
-                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                    mensaje += 'Cámara ocupada por otra aplicación';
-                    sugerencia = '💡 Cierra otras apps que usen la cámara';
-                } else if (error.name === 'OverconstrainedError') {
-                    mensaje += 'No hay cámara compatible';
-                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
-                } else if (error.name === 'TypeError') {
-                    mensaje += 'Navegador no compatible';
-                    sugerencia = '💡 Intenta con Chrome o Firefox';
-                } else {
-                    mensaje += error.message;
-                    sugerencia = '💡 Usa el botón "🖼️ PROBAR CON IMAGEN"';
-                }
-                
-                document.getElementById('status').innerHTML = 
-                    `<div class="error">${mensaje}<br><small>${sugerencia}</small></div>`;
+                console.error('❌ Error cámara:', error);
+                document.getElementById('status').textContent = '❌ Error con cámara';
                 document.getElementById('btnStart').disabled = false;
-                
-                console.log('╔═══════════════════════════════════════╗');
-                console.log('❌ DIAGNÓSTICO DE ERROR');
-                console.log('╚═══════════════════════════════════════╝');
-                console.log('Error:', error.name);
-                console.log('Mensaje:', error.message);
-                console.log('HTTPS:', esHTTPS);
-                console.log('Localhost:', esLocalhost);
-                console.log('UserAgent:', navigator.userAgent);
-                console.log('╚═══════════════════════════════════════╝');
-            }
-        }
-
-        async function cambiarCamara() {
-            if (camarasDisponibles.length <= 1) return;
-            camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
-            if (stream) {
-                detenerCamara();
-                setTimeout(() => iniciarCamara(), 300);
             }
         }
 
@@ -700,7 +783,7 @@
                 
                 document.getElementById('status').textContent = '⏸️ Detenido';
                 document.getElementById('btnStart').textContent = '🎥 INICIAR CÁMARA';
-                document.getElementById('btnStart').onclick = iniciarCamara;
+                document.getElementById('btnStart').className = 'control-button btn-camera';
             }
         }
 
@@ -713,38 +796,15 @@
             }
 
             procesando = true;
-            
-            document.getElementById('status').textContent = '🔄 Analizando...';
 
             try {
-                const startTime = performance.now();
-                
                 const input = preprocesarImagen();
                 const feeds = {};
                 feeds[session.inputNames[0]] = input;
                 const results = await session.run(feeds);
                 
                 const output = results[session.outputNames[0]];
-                const outputData = output.data;
-                
-                if (!window.diagnosticoDone2) {
-                    console.log('╔═══════════════════════════════════════╗');
-                    console.log('🔍 DIAGNÓSTICO DEL MODELO ONNX');
-                    console.log('╚═══════════════════════════════════════╝');
-                    console.log('📊 Shape output:', output.dims);
-                    console.log('🔢 Total elementos:', outputData.length);
-                    console.log('🎯 Clases esperadas:', CLASS_NAMES.length);
-                    console.log('🔍 Input size:', INPUT_SIZE);
-                    
-                    const numClases = CLASS_NAMES.length;
-                    const numPreds = Math.floor(outputData.length / (4 + numClases));
-                    console.log('🔢 Predicciones calculadas:', numPreds);
-                    console.log('╚═══════════════════════════════════════╝');
-                    
-                    window.diagnosticoDone2 = true;
-                }
-                
-                const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
+                const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
                 const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                 
                 deteccionesActuales = {};
@@ -752,22 +812,40 @@
                     deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
                 }
                 
-                actualizarDisplay();
+                actualizarOverlayDeteccion();
                 dibujarDetecciones(deteccionesFiltradas);
-                
-                const endTime = performance.now();
-                const processingTime = (endTime - startTime).toFixed(0);
-                
-                document.getElementById('status').textContent = 
-                    `✅ Detectando (${processingTime}ms)`;
                 
             } catch (error) {
                 console.error('Error detección:', error);
-                document.getElementById('status').textContent = '⚠️ Error en detección';
             }
 
             procesando = false;
             setTimeout(detectarConONNX, deteccionInterval);
+        }
+
+        function actualizarOverlayDeteccion() {
+            const totalActual = Object.entries(deteccionesActuales)
+                .reduce((sum, [billete, cantidad]) => sum + (VALORES[billete] * cantidad), 0);
+            
+            document.getElementById('detectionAmount').textContent = `${totalActual.toLocaleString()}`;
+            
+            const itemsDiv = document.getElementById('detectionItems');
+            const btnGuardar = document.getElementById('btnGuardarOverlay');
+            const btnLimpiar = document.getElementById('btnLimpiarOverlay');
+            
+            if (Object.keys(deteccionesActuales).length === 0) {
+                itemsDiv.innerHTML = '<div class="detection-empty">Sin detecciones</div>';
+                btnGuardar.disabled = true;
+                btnLimpiar.disabled = true;
+            } else {
+                let html = '';
+                for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
+                    html += `<div class="detection-badge">${cantidad}x ${billete}</div>`;
+                }
+                itemsDiv.innerHTML = html;
+                btnGuardar.disabled = false;
+                btnLimpiar.disabled = false;
+            }
         }
 
         function preprocesarImagen() {
@@ -781,8 +859,8 @@
             
             tempCtx.imageSmoothingEnabled = true;
             tempCtx.imageSmoothingQuality = 'low';
-            
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
+            
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
             const { data } = imageData;
             
@@ -802,21 +880,9 @@
         function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const detecciones = [];
             const numClases = CLASS_NAMES.length;
-            const totalElements = outputData.length;
-            const numPredictions = Math.floor(totalElements / (4 + numClases));
-            
+            const numPredictions = Math.floor(outputData.length / (4 + numClases));
             const scaleX = imgWidth / INPUT_SIZE;
             const scaleY = imgHeight / INPUT_SIZE;
-            
-            if (!window.diagnosticoDone) {
-                console.log('🔍 DEBUG:', {
-                    totalElements,
-                    numClases,
-                    numPredictions,
-                    expectedSize: (4 + numClases) * numPredictions
-                });
-                window.diagnosticoDone = true;
-            }
             
             for (let i = 0; i < numPredictions; i++) {
                 const xCenter = outputData[i];
@@ -828,9 +894,7 @@
                 let maxClassId = 0;
                 
                 for (let c = 0; c < numClases; c++) {
-                    const scoreIndex = numPredictions * (4 + c) + i;
-                    const score = outputData[scoreIndex];
-                    
+                    const score = outputData[numPredictions * (4 + c) + i];
                     if (score > maxScore) {
                         maxScore = score;
                         maxClassId = c;
@@ -848,12 +912,9 @@
                         conf: maxScore,
                         bbox: [x1, y1, x2, y2]
                     });
-                    
-                    console.log(`✅ ${CLASS_NAMES[maxClassId]}: ${(maxScore*100).toFixed(1)}%`);
                 }
             }
             
-            console.log(`📊 Detecciones válidas: ${detecciones.length}/${numPredictions}`);
             return detecciones;
         }
 
@@ -898,56 +959,31 @@
         function dibujarDetecciones(detecciones) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = '#00ff88';
-            ctx.lineWidth = 2;
-            ctx.font = 'bold 14px Arial';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 16px Arial';
             
             for (const det of detecciones) {
                 const [x1, y1, x2, y2] = det.bbox;
                 ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 
-                const label = `${det.class} ${(det.conf * 100).toFixed(0)}%`;
+                const label = `$${det.class} (${(det.conf * 100).toFixed(0)}%)`;
                 const textWidth = ctx.measureText(label).width;
                 
                 ctx.fillStyle = '#00ff88';
-                ctx.fillRect(x1, y1 - 20, textWidth + 8, 20);
+                ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
                 ctx.fillStyle = '#000';
-                ctx.fillText(label, x1 + 4, y1 - 4);
+                ctx.fillText(label, x1 + 5, y1 - 5);
             }
-        }
-
-        function actualizarDisplay() {
-            totalActual = 0;
-            for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
-                totalActual += VALORES[billete] * cantidad;
-            }
-
-            document.getElementById('total').textContent = `${totalActual.toLocaleString()}`;
-
-            const desgloseDiv = document.getElementById('desglose');
-            if (Object.keys(deteccionesActuales).length === 0) {
-                desgloseDiv.innerHTML = '<p style="text-align:center;color:#888;font-size:13px;">Sin detecciones</p>';
-            } else {
-                let html = '';
-                for (let [billete, cantidad] of Object.entries(deteccionesActuales)) {
-                    const subtotal = VALORES[billete] * cantidad;
-                    html += `
-                        <div class="deteccion-temp-item">
-                            <span>${cantidad}x ${billete}</span>
-                            <span style="color:#00ff88;font-weight:bold;">${subtotal.toLocaleString()}</span>
-                        </div>`;
-                }
-                desgloseDiv.innerHTML = html;
-            }
-
-            const totalHistorial = calcularTotalHistorial();
-            document.getElementById('total-historial').textContent = `${totalHistorial.toLocaleString()}`;
         }
 
         function guardarDeteccionActual() {
-            if (totalActual === 0 || Object.keys(deteccionesActuales).length === 0) {
+            if (Object.keys(deteccionesActuales).length === 0) {
                 alert('⚠️ No hay detecciones para guardar');
                 return;
             }
+
+            const totalActual = Object.entries(deteccionesActuales)
+                .reduce((sum, [billete, cantidad]) => sum + (VALORES[billete] * cantidad), 0);
 
             const registro = {
                 id: Date.now(),
@@ -959,13 +995,34 @@
             historial.unshift(registro);
             localStorage.setItem('historial_billetes', JSON.stringify(historial));
             
-            deteccionesActuales = {};
-            totalActual = 0;
-            
-            actualizarDisplay();
             actualizarHistorialUI();
 
+            // Mostrar feedback visual
+            const overlay = document.querySelector('.detection-overlay');
+            overlay.style.borderTop = '3px solid #00ff88';
+            setTimeout(() => {
+                overlay.style.borderTop = 'none';
+            }, 500);
+
             document.getElementById('status').textContent = '✅ Guardado en historial';
+            setTimeout(() => {
+                if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
+            }, 1500);
+        }
+
+        function limpiarDeteccionActual() {
+            deteccionesActuales = {};
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            actualizarOverlayDeteccion();
+            
+            // Feedback visual
+            const overlay = document.querySelector('.detection-overlay');
+            overlay.style.borderTop = '3px solid #ffaa00';
+            setTimeout(() => {
+                overlay.style.borderTop = 'none';
+            }, 500);
+
+            document.getElementById('status').textContent = '🗑️ Detección limpiada';
             setTimeout(() => {
                 if (deteccionActiva) document.getElementById('status').textContent = '✅ Detectando';
             }, 1500);
@@ -985,12 +1042,13 @@
         }
 
         function actualizarHistorialUI() {
-            const list = document.getElementById('historial-list');
             const totalHistorial = calcularTotalHistorial();
-            document.getElementById('total-historial').textContent = `${totalHistorial.toLocaleString()}`;
+            document.getElementById('totalHistorial').textContent = `${totalHistorial.toLocaleString()}`;
 
+            const list = document.getElementById('historialList');
+            
             if (historial.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Sin registros guardados</p>';
+                list.innerHTML = '<div class="empty-message">No hay registros guardados</div>';
                 return;
             }
 
@@ -1002,14 +1060,14 @@
                 
                 html += `
                     <div class="historial-item">
-                        <div class="historial-item-info">
+                        <div class="historial-item-header">
                             <div class="historial-item-valor">${reg.total.toLocaleString()}</div>
-                            <div style="font-size: 12px; color: #ccc; margin-bottom: 3px;">${desglose}</div>
-                            <div class="historial-item-fecha">${reg.timestamp}</div>
+                            <button class="btn-eliminar" onclick="eliminarDelHistorial(${reg.id})">
+                                🗑️
+                            </button>
                         </div>
-                        <button class="btn-eliminar" onclick="eliminarDelHistorial(${reg.id})">
-                            🗑️ Eliminar
-                        </button>
+                        <div class="historial-item-desglose">${desglose}</div>
+                        <div class="historial-item-fecha">${reg.timestamp}</div>
                     </div>`;
             }
             list.innerHTML = html;
@@ -1054,34 +1112,27 @@
                 canvas.width = img.width;
                 canvas.height = img.height;
                 
-                const videoCtx = canvas.getContext('2d');
-                videoCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
                 try {
-                    console.log('🔍 Iniciando detección en imagen...');
-                    document.getElementById('status').textContent = '🔍 Analizando...';
+                    document.getElementById('status').textContent = '🔍 Analizando imagen...';
                     
-                    const input = preprocesarImagenStatic(img);
+                    const inputTensor = preprocesarImagenStatic(img);
                     const feeds = {};
-                    feeds[session.inputNames[0]] = input;
+                    feeds[session.inputNames[0]] = inputTensor;
                     
                     const results = await session.run(feeds);
                     const output = results[session.outputNames[0]];
-                    const outputData = output.data;
                     
-                    console.log('📊 Output recibido:', output.dims, 'Elementos:', outputData.length);
-                    
-                    const detecciones = postprocesarResultados(outputData, canvas.width, canvas.height);
+                    const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
                     const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
-                    
-                    console.log('✅ Detecciones encontradas:', deteccionesFiltradas.length);
                     
                     deteccionesActuales = {};
                     for (const det of deteccionesFiltradas) {
                         deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
                     }
                     
-                    actualizarDisplay();
+                    actualizarOverlayDeteccion();
                     dibujarDetecciones(deteccionesFiltradas);
                     
                     document.getElementById('status').textContent = 
@@ -1091,8 +1142,7 @@
                     
                 } catch (error) {
                     console.error('❌ Error procesando imagen:', error);
-                    document.getElementById('status').innerHTML = 
-                        '<div class="error">❌ Error al procesar</div>';
+                    document.getElementById('status').textContent = '❌ Error al procesar';
                 }
             };
             
@@ -1110,11 +1160,13 @@
             const { data } = imageData;
             
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+            const pixelCount = INPUT_SIZE * INPUT_SIZE;
             
-            for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
-                input[i] = data[i * 4] / 255.0;
-                input[INPUT_SIZE * INPUT_SIZE + i] = data[i * 4 + 1] / 255.0;
-                input[INPUT_SIZE * INPUT_SIZE * 2 + i] = data[i * 4 + 2] / 255.0;
+            for (let i = 0; i < pixelCount; i++) {
+                const idx = i * 4;
+                input[i] = data[idx] / 255.0;
+                input[pixelCount + i] = data[idx + 1] / 255.0;
+                input[pixelCount * 2 + i] = data[idx + 2] / 255.0;
             }
             
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
