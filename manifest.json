@@ -1,0 +1,29 @@
+{
+  "name": "Detector de Billetes Pro",
+  "short_name": "DetectorPro",
+  "description": "Contador automático de billetes con IA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#00ff88",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "permissions": [
+    "camera"
+  ],
+  "categories": ["utilities", "productivity"],
+  "screenshots": []
+}
