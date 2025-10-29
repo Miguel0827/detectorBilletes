@@ -31,10 +31,10 @@
 
         .camera-wrapper {
             position: relative;
-            width: 640px;
-            height: 480px;
+            width: 800px;
+            height: 600px;
             max-width: 90vw;
-            max-height: 70vh;
+            max-height: 85vh;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
@@ -164,7 +164,7 @@
 
         .btn-capture {
             position: absolute;
-            bottom: 15px;
+            bottom: 85px;
             right: 15px;
             width: 60px;
             height: 60px;
@@ -542,6 +542,10 @@
         }
 
         @media (max-width: 768px) {
+            .camera-wrapper {
+                max-height: 75vh;
+            }
+
             .panel-left, .panel-right {
                 width: 90vw;
             }
@@ -564,6 +568,7 @@
                 width: 55px;
                 height: 55px;
                 font-size: 24px;
+                bottom: 80px;
             }
         }
 
