@@ -16,18 +16,20 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             color: #fff;
-            overflow: hidden;
-            height: 100vh;
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
         }
 
         .main-container {
             position: relative;
             width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
+            padding: 10px 0;
         }
 
         .camera-wrapper {
@@ -174,7 +176,7 @@
             border: 3px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 4px 20px rgba(0, 204, 255, 0.6);
             cursor: pointer;
-            z-index: 20;
+            z-index: 25;
             display: none;
             align-items: center;
             justify-content: center;
@@ -212,10 +214,11 @@
             border-radius: 20px;
             font-size: 11px;
             color: #00ccff;
-            z-index: 15;
+            z-index: 25;
             text-transform: uppercase;
             letter-spacing: 1px;
             display: none;
+            pointer-events: none;
         }
 
         .btn-menu-left {
@@ -543,9 +546,18 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+            }
+
+            .main-container {
+                min-height: 100vh;
+                padding: 5px 0;
+            }
+
             .camera-wrapper {
                 max-width: 95vw;
-                max-height: 85vh;
+                max-height: 80vh;
             }
 
             .panel-left, .panel-right {
@@ -574,8 +586,13 @@
             }
 
             .status-panel {
-                font-size: 12px;
-                padding: 10px;
+                font-size: 11px;
+                padding: 8px;
+            }
+
+            .mode-indicator {
+                font-size: 10px;
+                padding: 6px 12px;
             }
         }
 
@@ -816,7 +833,7 @@
                 status.textContent = '✅ Listo - Presiona INICIAR';
             } catch (error) {
                 console.error('❌ ERROR cargando modelo:', error);
-                status.innerHTML = '⚠️ Modelo no encontrado';
+                status.textContent = '⚠️ Modelo no encontrado';
             }
         };
 
@@ -888,11 +905,17 @@
 
             camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
             
-            if (stream) {
+            const cameraActual = camarasDisponibles[camaraActualIndex];
+            const nombreCamara = cameraActual.label || `Cámara ${camaraActualIndex + 1}`;
+            console.log('🔄 Cambiando a:', nombreCamara);
+            
+            if (camaraActiva) {
                 detenerCamara();
                 setTimeout(() => {
                     iniciarCamara();
                 }, 500);
+            } else {
+                document.getElementById('status').textContent = `📹 ${nombreCamara} seleccionada`;
             }
         }
 
