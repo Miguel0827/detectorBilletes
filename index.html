@@ -725,8 +725,9 @@
 
             if (esMobil) {
                 // Optimizaciones para móvil
-                INPUT_SIZE = 320;
-                deteccionInterval = 1500;
+                INPUT_SIZE = 416; // Tamaño intermedio para mejor detección
+                deteccionInterval = 2000; // Más tiempo entre detecciones
+                CONF_THRESHOLD = 0.35; // Umbral de confianza más bajo
                 console.log('📱 Modo móvil activado - INPUT_SIZE:', INPUT_SIZE);
 
                 try {
@@ -788,8 +789,9 @@
                 const constraints = {
                     video: {
                         facingMode: { ideal: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 1920 },  // Resolución más alta
+                        height: { ideal: 1080 },
+                        aspectRatio: { ideal: 16/9 }
                     }
                 };
 
@@ -808,6 +810,10 @@
                 video.onloadedmetadata = function() {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
+                    
+                    console.log('📹 Resolución cámara:', video.videoWidth, 'x', video.videoHeight);
+                    console.log('🎯 INPUT_SIZE para modelo:', INPUT_SIZE);
+                    console.log('🎲 Umbral confianza:', CONF_THRESHOLD);
                     
                     document.getElementById('status').textContent = '✅ Detectando';
                     document.getElementById('btnStart').textContent = '🛑 DETENER CÁMARA';
@@ -892,6 +898,11 @@
                 const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
                 const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
                 
+                console.log(`🔍 Detecciones encontradas: ${deteccionesFiltradas.length}`);
+                if (deteccionesFiltradas.length > 0) {
+                    console.log('💵 Billetes:', deteccionesFiltradas.map(d => `${d.class} (${(d.conf*100).toFixed(0)}%)`).join(', '));
+                }
+                
                 deteccionesActuales = {};
                 for (const det of deteccionesFiltradas) {
                     deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
@@ -942,8 +953,9 @@
                 alpha: false
             });
             
+            // Mejorar calidad de redimensionamiento
             tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'low';
+            tempCtx.imageSmoothingQuality = 'high'; // Cambio de 'low' a 'high'
             tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
             
             const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
