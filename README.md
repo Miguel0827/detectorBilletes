@@ -70,9 +70,9 @@ Modelo YOLOv11 entrenado en formato PyTorch (.pt) y convertido a ONNX para ejecu
 
 | Nombre | Código |
 |--------|--------|
-| **Yeimar Erduay Méndez Montiel** | 2220222044 |
-| **Jaminton Julián Leyton Camacho** | 2220221015 |
+
 | **Miguel Ángel Murillo de los Ríos** | 2220232041 |
+| **Jonathan David Moya Patarroyo** | 2220222039 |
 
 ---
 
