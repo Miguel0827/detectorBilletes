@@ -1,9 +1,13 @@
 {
-  "name": "Detector de Billetes",
+  "name": "Detector de Billetes Pro",
   "short_name": "DetectorPro",
-  "description": "Contador automático de billetes con IA",
-  "start_url": "/",
+  "description": "Contador automático de billetes con IA — funciona sin conexión",
+  "start_url": "./",
+  "scope": "./",
+  "lang": "es",
+  "dir": "ltr",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
   "background_color": "#1a1a1a",
   "theme_color": "#00ff88",
   "orientation": "portrait",
@@ -24,6 +28,21 @@
   "permissions": [
     "camera"
   ],
-  "categories": ["utilities", "productivity"],
+  "categories": ["utilities", "productivity", "finance"],
+  "shortcuts": [
+    {
+      "name": "Iniciar cámara",
+      "short_name": "Cámara",
+      "description": "Abrir cámara para detectar billetes",
+      "url": "./?action=camera"
+    },
+    {
+      "name": "Subir imagen",
+      "short_name": "Imagen",
+      "description": "Detectar billetes en una imagen",
+      "url": "./?action=image"
+    }
+  ],
+  "prefer_related_applications": false,
   "screenshots": []
 }

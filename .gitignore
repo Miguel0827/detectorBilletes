@@ -1,0 +1,47 @@
+# Archivos comprimidos / datasets locales
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+# Datos sin procesar / pesados
+manipulacion_Data/
+data/
+datasets/
+*.csv.bak
+
+# Entornos y dependencias
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores e IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# Logs y temporales
+*.log
+*.tmp
+.cache/
+
+# Modelos alternativos / experimentos
+models/*.pt
+models/*.onnx.bak
+models/checkpoints/
+
+# Reportes de exportación generados por la app
+historial_billetes_*.json

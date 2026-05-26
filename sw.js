@@ -1,50 +1,77 @@
-const CACHE_NAME = 'detector-billetes-v1';
+const CACHE_NAME = 'detector-billetes-v2';
+const RUNTIME_CACHE = 'detector-runtime-v2';
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/models/best.onnx'
+  './',
+  './index.html',
+  './manifest.json',
+  './models/best.onnx',
+  'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js'
 ];
 
-// Instalación - cachear archivos
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache abierto');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] Precacheando recursos esenciales');
+        return cache.addAll(urlsToCache).catch(err => {
+          console.warn('[SW] Algunos recursos no se pudieron cachear:', err);
+        });
       })
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activación - limpiar caches antiguos
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Eliminando cache antiguo:', cacheName);
+          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+            console.log('[SW] Eliminando cache antiguo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  const { request } = event;
+
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  if (url.pathname.endsWith('.onnx')) {
+    event.respondWith(
+      caches.match(request).then(cached => cached || fetch(request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+        return response;
+      }))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then(cached => {
+      const networkFetch = fetch(request).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => cached);
+
+      return cached || networkFetch;
     })
   );
 });
 
-// Fetch - servir desde cache o red
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - retornar respuesta
-        if (response) {
-          return response;
-        }
-        // Sino, hacer fetch a la red
-        return fetch(event.request);
-      }
-    )
-  );
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

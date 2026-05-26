@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1a1a1a">
+    <meta name="description" content="Contador automático de billetes con IA. Detecta y suma billetes en tiempo real usando la cámara.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DetectorPro">
+    <link rel="manifest" href="manifest.json">
     <title>Detector Billetes Pro</title>
     <style>
         * {
@@ -14,18 +19,23 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            background:
+                radial-gradient(ellipse at top left, rgba(0, 204, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
+                linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             color: #fff;
             overflow-x: hidden;
             min-height: 100vh;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .main-container {
             position: relative;
             width: 100%;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -38,9 +48,11 @@
             height: 600px;
             max-width: 95vw;
             max-height: 90vh;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+            box-shadow:
+                0 8px 32px rgba(0, 255, 136, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
             background: #000;
         }
 
@@ -284,6 +296,7 @@
             top: 0;
             width: 350px;
             height: 100vh;
+            height: 100dvh;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
             transition: left 0.3s ease;
@@ -303,6 +316,7 @@
             top: 0;
             width: 400px;
             height: 100vh;
+            height: 100dvh;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
             transition: right 0.3s ease;
@@ -550,6 +564,14 @@
             display: block;
         }
 
+        @media (max-width: 1024px) {
+            .camera-wrapper {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+        }
+
         @media (max-width: 768px) {
             body {
                 overflow-y: auto;
@@ -557,22 +579,24 @@
 
             .main-container {
                 min-height: 100vh;
+                min-height: 100dvh;
                 padding: 5px 0;
             }
 
             .camera-wrapper {
-                max-width: 95vw;
-                max-height: 80vh;
+                max-width: 96vw;
+                max-height: 78dvh;
+                aspect-ratio: 3/4;
             }
 
             .panel-left, .panel-right {
-                width: 90vw;
+                width: min(90vw, 360px);
             }
 
             .btn-menu-left, .btn-menu-right {
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
+                width: 52px;
+                height: 52px;
+                font-size: 22px;
             }
 
             .btn-menu-left {
@@ -584,10 +608,10 @@
             }
 
             .btn-capture {
-                width: 55px;
-                height: 55px;
-                font-size: 24px;
-                bottom: 80px;
+                width: 60px;
+                height: 60px;
+                font-size: 26px;
+                bottom: 90px;
             }
 
             .status-panel {
@@ -599,10 +623,235 @@
                 font-size: 10px;
                 padding: 6px 12px;
             }
+
+            .detection-value-amount {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .camera-wrapper {
+                max-width: 100vw;
+                max-height: 75dvh;
+                border-radius: 0;
+            }
+
+            .detection-overlay {
+                padding: 10px;
+            }
+
+            .detection-value-amount {
+                font-size: 24px;
+            }
+
+            .detection-actions {
+                gap: 6px;
+            }
+
+            .btn-overlay {
+                padding: 9px;
+                font-size: 11px;
+            }
+
+            .detection-badge {
+                padding: 3px 8px;
+                font-size: 11px;
+            }
+
+            .stats-panel {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+
+            .stat-card {
+                padding: 8px;
+            }
+
+            .stat-card-value {
+                font-size: 15px;
+            }
+
+            .panel-left, .panel-right {
+                width: 100vw;
+                border-radius: 0;
+            }
+
+            .btn-menu-left, .btn-menu-right {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main-container {
+                padding: 5px;
+            }
+
+            .camera-wrapper {
+                max-height: 95dvh;
+                aspect-ratio: 16/9;
+            }
+
+            .btn-menu-left, .btn-menu-right {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+
+            .detection-overlay {
+                padding: 8px;
+            }
+
+            .detection-value-amount {
+                font-size: 22px;
+            }
+
+            .detection-value-label {
+                display: none;
+            }
+
+            .detection-items {
+                max-height: 40px;
+                margin-bottom: 6px;
+            }
+
+            .btn-overlay {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            .btn-capture {
+                width: 50px;
+                height: 50px;
+                font-size: 22px;
+                bottom: 60px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
 
         input[type="file"] {
             display: none;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.92);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            padding: 12px 22px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 300;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.25);
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.error {
+            color: #ff6b6b;
+            border-color: rgba(255, 107, 107, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.25);
+        }
+
+        .toast.warn {
+            color: #ffaa00;
+            border-color: rgba(255, 170, 0, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 170, 0, 0.25);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-card-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ccff;
+            margin-bottom: 2px;
+        }
+
+        .stat-card-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-export {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #00ccff, #0088ff);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            transition: transform 0.2s;
+        }
+
+        .btn-export:active {
+            transform: scale(0.95);
+        }
+
+        .btn-export:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .kbd-hint {
+            font-size: 10px;
+            color: #555;
+            text-align: center;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .kbd-hint kbd {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            padding: 1px 5px;
+            font-family: monospace;
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        @media (max-width: 768px) {
+            .kbd-hint { display: none; }
+            .toast { bottom: 100px; font-size: 12px; padding: 10px 18px; }
         }
     </style>
 </head>
@@ -676,6 +925,14 @@
                 <span id="confValue">35%</span>
             </div>
         </div>
+
+        <div class="kbd-hint" id="kbdHint">
+            Atajos:
+            <kbd>Espacio</kbd> capturar ·
+            <kbd>G</kbd> guardar ·
+            <kbd>L</kbd> limpiar ·
+            <kbd>H</kbd> historial
+        </div>
     </div>
 
     <div class="panel-right" id="panelRight">
@@ -689,6 +946,29 @@
             <div class="historial-label">Total Acumulado</div>
         </div>
 
+        <div class="stats-panel" id="statsPanel">
+            <div class="stat-card">
+                <div class="stat-card-value" id="statCount">0</div>
+                <div class="stat-card-label">Registros</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="statAvg">$0</div>
+                <div class="stat-card-label">Promedio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="statMax">$0</div>
+                <div class="stat-card-label">Mayor</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="statBilletes">0</div>
+                <div class="stat-card-label">Billetes</div>
+            </div>
+        </div>
+
+        <button class="btn-export" id="btnExportar" onclick="exportarHistorial()" disabled>
+            📤 EXPORTAR HISTORIAL (JSON)
+        </button>
+
         <div id="historialList">
             <div class="empty-message">No hay registros guardados</div>
         </div>
@@ -699,6 +979,8 @@
     </div>
 
     <input type="file" id="imageInput" accept="image/*" onchange="procesarImagen(this)">
+
+    <div class="toast" id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <script>
@@ -767,12 +1049,28 @@
             document.getElementById('confValue').textContent = value + '%';
         }
 
+        let toastTimer = null;
+        function mostrarToast(mensaje, tipo) {
+            const toast = document.getElementById('toast');
+            toast.textContent = mensaje;
+            toast.className = 'toast show' + (tipo ? ' ' + tipo : '');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.className = 'toast' + (tipo ? ' ' + tipo : '');
+            }, 2200);
+        }
+
         function cargarHistorial() {
             const saved = localStorage.getItem('historial_billetes');
             if (saved) {
-                historial = JSON.parse(saved);
-                actualizarHistorialUI();
+                try {
+                    historial = JSON.parse(saved);
+                } catch (err) {
+                    console.warn('Historial corrupto, reiniciando:', err);
+                    historial = [];
+                }
             }
+            actualizarHistorialUI();
         }
 
         function calcularTotalHistorial() {
@@ -953,23 +1251,8 @@
             procesando = true;
 
             try {
-                const input = preprocesarImagen();
-                const feeds = {};
-                feeds[session.inputNames[0]] = input;
-                const results = await session.run(feeds);
-                
-                const output = results[session.outputNames[0]];
-                const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
-                const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
-                
-                deteccionesActuales = {};
-                for (const det of deteccionesFiltradas) {
-                    deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
-                }
-                
-                actualizarOverlayDeteccion();
-                dibujarDetecciones(deteccionesFiltradas);
-                
+                const deteccionesFiltradas = await ejecutarDeteccionSobre(video);
+                actualizarDeteccionesActuales(deteccionesFiltradas);
             } catch (error) {
                 console.error('Error detección:', error);
             }
@@ -1008,33 +1291,20 @@
                     }
                     
                     ctx.drawImage(video, 0, 0, drawWidth, drawHeight);
-                    
+
                     capturedImage.src = canvas.toDataURL('image/jpeg', 0.85);
                     capturedImage.style.display = 'block';
-                    
-                    const input = preprocesarImagen();
-                    const feeds = {};
-                    feeds[session.inputNames[0]] = input;
-                    const results = await session.run(feeds);
-                    
-                    const output = results[session.outputNames[0]];
-                    const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
-                    const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
-                    
+
+                    const deteccionesFiltradas = await ejecutarDeteccionSobre(video);
+
                     const endTime = performance.now();
                     console.log(`⏱️ Tiempo: ${(endTime - startTime).toFixed(0)}ms | Detecciones: ${deteccionesFiltradas.length}`);
-                    
-                    deteccionesActuales = {};
-                    for (const det of deteccionesFiltradas) {
-                        deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
-                    }
-                    
-                    actualizarOverlayDeteccion();
-                    dibujarDetecciones(deteccionesFiltradas);
-                    
-                    document.getElementById('status').textContent = 
-                        deteccionesFiltradas.length > 0 ? 
-                        `✅ ${deteccionesFiltradas.length} billetes detectados` : 
+
+                    actualizarDeteccionesActuales(deteccionesFiltradas);
+
+                    document.getElementById('status').textContent =
+                        deteccionesFiltradas.length > 0 ?
+                        `✅ ${deteccionesFiltradas.length} billetes detectados` :
                         '⚠️ No se detectaron billetes';
                     
                 } catch (error) {
@@ -1074,31 +1344,40 @@
             }
         }
 
-        function preprocesarImagen() {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = INPUT_SIZE;
-            tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
-            
-            tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'medium';
-            tempCtx.drawImage(video, 0, 0, INPUT_SIZE, INPUT_SIZE);
-            
-            const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
+        let _preprocessCanvas = null;
+        let _preprocessCtx = null;
+
+        function preprocesarSource(source) {
+            if (!_preprocessCanvas) {
+                _preprocessCanvas = document.createElement('canvas');
+                _preprocessCanvas.width = INPUT_SIZE;
+                _preprocessCanvas.height = INPUT_SIZE;
+                _preprocessCtx = _preprocessCanvas.getContext('2d', { willReadFrequently: true });
+                _preprocessCtx.imageSmoothingEnabled = true;
+                _preprocessCtx.imageSmoothingQuality = 'medium';
+            } else if (_preprocessCanvas.width !== INPUT_SIZE) {
+                _preprocessCanvas.width = INPUT_SIZE;
+                _preprocessCanvas.height = INPUT_SIZE;
+            }
+
+            _preprocessCtx.drawImage(source, 0, 0, INPUT_SIZE, INPUT_SIZE);
+
+            const imageData = _preprocessCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
             const { data } = imageData;
-            
+
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
             const pixelCount = INPUT_SIZE * INPUT_SIZE;
-            
+
             for (let i = 0; i < pixelCount; i++) {
                 const idx = i * 4;
                 input[i] = data[idx] / 255.0;
                 input[pixelCount + i] = data[idx + 1] / 255.0;
                 input[pixelCount * 2 + i] = data[idx + 2] / 255.0;
             }
-            
+
             return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
         }
+
 
         function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const detecciones = [];
@@ -1204,7 +1483,7 @@
 
         function guardarDeteccionActual() {
             if (Object.keys(deteccionesActuales).length === 0) {
-                alert('⚠️ No hay detecciones para guardar');
+                mostrarToast('⚠️ No hay detecciones para guardar', 'warn');
                 return;
             }
 
@@ -1225,7 +1504,8 @@
 
             const overlay = document.querySelector('.detection-overlay');
             overlay.style.borderTop = '3px solid #00ff88';
-            
+
+            mostrarToast(`✅ Guardado $${totalActual.toLocaleString()}`);
             document.getElementById('status').textContent = '✅ Guardado en historial';
 
             setTimeout(() => {
@@ -1282,12 +1562,17 @@
             const totalHistorial = calcularTotalHistorial();
             document.getElementById('totalHistorial').textContent = `${totalHistorial.toLocaleString()}`;
 
+            actualizarEstadisticas(totalHistorial);
+
             const list = document.getElementById('historialList');
-            
+            const btnExportar = document.getElementById('btnExportar');
+
             if (historial.length === 0) {
                 list.innerHTML = '<div class="empty-message">No hay registros guardados</div>';
+                if (btnExportar) btnExportar.disabled = true;
                 return;
             }
+            if (btnExportar) btnExportar.disabled = false;
 
             let html = '';
             for (let reg of historial) {
@@ -1312,7 +1597,7 @@
 
         function limpiarHistorial() {
             if (historial.length === 0) {
-                alert('⚠️ El historial ya está vacío');
+                mostrarToast('⚠️ El historial ya está vacío', 'warn');
                 return;
             }
 
@@ -1320,7 +1605,50 @@
                 historial = [];
                 localStorage.removeItem('historial_billetes');
                 actualizarHistorialUI();
+                mostrarToast('🗑️ Historial limpiado');
             }
+        }
+
+        function actualizarEstadisticas(total) {
+            const count = historial.length;
+            const avg = count > 0 ? Math.round(total / count) : 0;
+            const max = count > 0 ? Math.max(...historial.map(r => r.total)) : 0;
+            const totalBilletes = historial.reduce((sum, r) => {
+                return sum + Object.values(r.desglose).reduce((s, c) => s + c, 0);
+            }, 0);
+
+            const el = id => document.getElementById(id);
+            if (el('statCount')) el('statCount').textContent = count;
+            if (el('statAvg')) el('statAvg').textContent = `$${avg.toLocaleString()}`;
+            if (el('statMax')) el('statMax').textContent = `$${max.toLocaleString()}`;
+            if (el('statBilletes')) el('statBilletes').textContent = totalBilletes;
+        }
+
+        function exportarHistorial() {
+            if (historial.length === 0) {
+                mostrarToast('⚠️ Nada que exportar', 'warn');
+                return;
+            }
+
+            const data = {
+                exportado: new Date().toISOString(),
+                total_acumulado: calcularTotalHistorial(),
+                cantidad_registros: historial.length,
+                registros: historial
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const fecha = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `historial_billetes_${fecha}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            mostrarToast('📤 Historial exportado');
         }
 
         function probarConImagen() {
@@ -1351,64 +1679,72 @@
                 
                 try {
                     document.getElementById('status').textContent = '🔎 Analizando imagen...';
-                    
-                    const inputTensor = preprocesarImagenStatic(img);
-                    const feeds = {};
-                    feeds[session.inputNames[0]] = inputTensor;
-                    
-                    const results = await session.run(feeds);
-                    const output = results[session.outputNames[0]];
-                    
-                    const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
-                    const deteccionesFiltradas = nonMaxSuppression(detecciones, IOU_THRESHOLD);
-                    
-                    deteccionesActuales = {};
-                    for (const det of deteccionesFiltradas) {
-                        deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
-                    }
-                    
-                    actualizarOverlayDeteccion();
-                    dibujarDetecciones(deteccionesFiltradas);
-                    
-                    document.getElementById('status').textContent = 
-                        deteccionesFiltradas.length > 0 ? 
-                        `✅ ${deteccionesFiltradas.length} billetes detectados` : 
+
+                    const deteccionesFiltradas = await ejecutarDeteccionSobre(img);
+                    actualizarDeteccionesActuales(deteccionesFiltradas);
+
+                    document.getElementById('status').textContent =
+                        deteccionesFiltradas.length > 0 ?
+                        `✅ ${deteccionesFiltradas.length} billetes detectados` :
                         '⚠️ No se detectaron billetes';
-                    
+
                 } catch (error) {
                     console.error('❌ Error procesando imagen:', error);
                     document.getElementById('status').textContent = '❌ Error al procesar';
+                    mostrarToast('❌ Error al procesar imagen', 'error');
                 }
             };
             
             img.src = URL.createObjectURL(file);
         }
 
-        function preprocesarImagenStatic(img) {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = INPUT_SIZE;
-            tempCanvas.height = INPUT_SIZE;
-            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
-            
-            tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = 'medium';
-            tempCtx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
-            
-            const imageData = tempCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-            const { data } = imageData;
-            
-            const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
-            const pixelCount = INPUT_SIZE * INPUT_SIZE;
-            
-            for (let i = 0; i < pixelCount; i++) {
-                const idx = i * 4;
-                input[i] = data[idx] / 255.0;
-                input[pixelCount + i] = data[idx + 1] / 255.0;
-                input[pixelCount * 2 + i] = data[idx + 2] / 255.0;
-            }
-            
-            return new ort.Tensor('float32', input, [1, 3, INPUT_SIZE, INPUT_SIZE]);
+        async function ejecutarDeteccionSobre(source) {
+            const inputTensor = preprocesarSource(source);
+            const feeds = {};
+            feeds[session.inputNames[0]] = inputTensor;
+            const results = await session.run(feeds);
+            const output = results[session.outputNames[0]];
+            const detecciones = postprocesarResultados(output.data, canvas.width, canvas.height);
+            return nonMaxSuppression(detecciones, IOU_THRESHOLD);
         }
+
+        function actualizarDeteccionesActuales(detecciones) {
+            deteccionesActuales = {};
+            for (const det of detecciones) {
+                deteccionesActuales[det.class] = (deteccionesActuales[det.class] || 0) + 1;
+            }
+            actualizarOverlayDeteccion();
+            dibujarDetecciones(detecciones);
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('[SW] Registrado:', reg.scope))
+                    .catch(err => console.warn('[SW] Registro fallido:', err));
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            const key = e.key.toLowerCase();
+
+            if (e.code === 'Space' && esMobil && camaraActiva && !procesando) {
+                e.preventDefault();
+                capturarYDetectar();
+            } else if (key === 'g' && Object.keys(deteccionesActuales).length > 0) {
+                guardarDeteccionActual();
+            } else if (key === 'l' && Object.keys(deteccionesActuales).length > 0) {
+                limpiarDeteccionActual();
+            } else if (key === 'h') {
+                togglePanelRight();
+            } else if (key === 'c') {
+                togglePanelLeft();
+            } else if (key === 'escape') {
+                closePanels();
+            }
+        });
 
         window.onbeforeunload = function() {
             if (stream) stream.getTracks().forEach(t => t.stop());
