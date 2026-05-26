@@ -513,11 +513,44 @@
             background: rgba(255, 68, 68, 0.2);
             border: 1px solid #ff4444;
             color: #ff4444;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
             font-size: 11px;
             cursor: pointer;
             transition: all 0.2s;
+        }
+
+        .btn-eliminar .icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .btn-capture .icon,
+        .btn-menu-left .icon,
+        .btn-menu-right .icon {
+            width: 26px;
+            height: 26px;
+        }
+
+        .btn-close .icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .toast .icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .panel-header h2 .icon,
+        .mode-indicator .icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .control-panel h3 .icon {
+            width: 14px;
+            height: 14px;
         }
 
         .btn-eliminar:hover {
@@ -816,14 +849,18 @@
         }
 
         .historial-filter::before {
-            content: '🔍';
+            content: '';
             position: absolute;
-            left: 10px;
+            left: 12px;
             top: 50%;
+            width: 14px;
+            height: 14px;
             transform: translateY(-50%);
-            font-size: 14px;
             pointer-events: none;
-            opacity: 0.6;
+            opacity: 0.5;
+            background-repeat: no-repeat;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+            background-size: contain;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -836,6 +873,59 @@
 
         input[type="file"] {
             display: none;
+        }
+
+        .icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .icon-sm { width: 14px; height: 14px; }
+        .icon-lg { width: 26px; height: 26px; }
+        .icon-xl { width: 32px; height: 32px; }
+
+        .with-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .control-button, .btn-overlay, .btn-export, .btn-limpiar-historial {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-eliminar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 8px;
+        }
+
+        .btn-menu-left, .btn-menu-right, .btn-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-capture {
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel-header h2, .control-panel h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .toast {
@@ -857,6 +947,9 @@
             box-shadow: 0 4px 20px rgba(0, 255, 136, 0.25);
             max-width: 90vw;
             text-align: center;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .toast.show {
@@ -959,7 +1052,7 @@
             <canvas id="canvas"></canvas>
             <img id="capturedImage" alt="Captura">
             
-            <div class="mode-indicator" id="modeIndicator">📸 MODO CAPTURA</div>
+            <div class="mode-indicator with-icon" id="modeIndicator" data-icon="camera"><span>MODO CAPTURA</span></div>
 
             <div class="capture-flash" id="captureFlash"></div>
 
@@ -968,9 +1061,7 @@
                 <div class="spinner-text" id="spinnerText">CARGANDO MODELO...</div>
             </div>
             
-            <button class="btn-capture" id="btnCapture" onclick="capturarYDetectar()">
-                📸
-            </button>
+            <button class="btn-capture" id="btnCapture" onclick="capturarYDetectar()" aria-label="Capturar" data-icon="camera"></button>
             
             <div class="detection-overlay">
                 <div class="detection-value">
@@ -983,46 +1074,42 @@
                 </div>
                 
                 <div class="detection-actions">
-                    <button class="btn-overlay btn-overlay-save" onclick="guardarDeteccionActual()" id="btnGuardarOverlay">
-                        💾 GUARDAR
-                    </button>
-                    <button class="btn-overlay btn-overlay-clear" onclick="limpiarDeteccionActual()" id="btnLimpiarOverlay">
-                        🗑️ LIMPIAR
-                    </button>
+                    <button class="btn-overlay btn-overlay-save" onclick="guardarDeteccionActual()" id="btnGuardarOverlay" data-icon="save"><span>GUARDAR</span></button>
+                    <button class="btn-overlay btn-overlay-clear" onclick="limpiarDeteccionActual()" id="btnLimpiarOverlay" data-icon="trash"><span>LIMPIAR</span></button>
                 </div>
             </div>
         </div>
     </div>
 
-    <button class="btn-menu-left" onclick="togglePanelLeft()">⚙️</button>
-    <button class="btn-menu-right" onclick="togglePanelRight()">💰</button>
+    <button class="btn-menu-left" onclick="togglePanelLeft()" aria-label="Controles" data-icon="sliders"></button>
+    <button class="btn-menu-right" onclick="togglePanelRight()" aria-label="Historial" data-icon="dollar"></button>
 
     <div class="overlay" id="overlay" onclick="closePanels()"></div>
 
     <div class="panel-left" id="panelLeft">
         <div class="panel-header">
-            <h2>⚙️ Controles</h2>
-            <button class="btn-close" onclick="togglePanelLeft()">✕</button>
+            <h2 data-icon="sliders"><span>Controles</span></h2>
+            <button class="btn-close" onclick="togglePanelLeft()" aria-label="Cerrar" data-icon="close"></button>
         </div>
 
         <div class="status-panel" id="status">
             Presiona iniciar cámara
         </div>
 
-        <button class="control-button btn-camera" id="btnStart" onclick="iniciarCamara()">
-            🎥 INICIAR CÁMARA
+        <button class="control-button btn-camera" id="btnStart" onclick="iniciarCamara()" data-icon="video">
+            <span>INICIAR CÁMARA</span>
         </button>
 
-        <button class="control-button btn-image" onclick="probarConImagen()">
-            🖼️ SUBIR IMAGEN
+        <button class="control-button btn-image" onclick="probarConImagen()" data-icon="image">
+            <span>SUBIR IMAGEN</span>
         </button>
 
-        <button class="control-button" id="btnSwitchCamera" onclick="cambiarCamara()" style="background: linear-gradient(135deg, #9d4edd, #7b2cbf); color: #fff; display: none;">
-            🔄 CAMBIAR CÁMARA
+        <button class="control-button" id="btnSwitchCamera" onclick="cambiarCamara()" style="background: linear-gradient(135deg, #9d4edd, #7b2cbf); color: #fff; display: none;" data-icon="refresh">
+            <span>CAMBIAR CÁMARA</span>
         </button>
 
         <div class="control-panel">
-            <h3>🎯 Ajustes de Detección</h3>
+            <h3 data-icon="target"><span>Ajustes de Detección</span></h3>
             <div class="control-row">
                 <label>Confianza:</label>
                 <input type="range" id="confSlider" min="10" max="90" value="35" oninput="actualizarConf(this.value)">
@@ -1041,8 +1128,8 @@
 
     <div class="panel-right" id="panelRight">
         <div class="panel-header">
-            <h2>💰 Historial</h2>
-            <button class="btn-close" onclick="togglePanelRight()">✕</button>
+            <h2 data-icon="history"><span>Historial</span></h2>
+            <button class="btn-close" onclick="togglePanelRight()" aria-label="Cerrar" data-icon="close"></button>
         </div>
 
         <div class="historial-header">
@@ -1073,16 +1160,16 @@
             </div>
         </div>
 
-        <button class="btn-export" id="btnExportar" onclick="exportarHistorial()" disabled>
-            📤 EXPORTAR HISTORIAL (JSON)
+        <button class="btn-export" id="btnExportar" onclick="exportarHistorial()" disabled data-icon="download">
+            <span>EXPORTAR HISTORIAL (JSON)</span>
         </button>
 
         <div id="historialList">
             <div class="empty-message">No hay registros guardados</div>
         </div>
 
-        <button class="btn-limpiar-historial" onclick="limpiarHistorial()">
-            🗑️ LIMPIAR TODO EL HISTORIAL
+        <button class="btn-limpiar-historial" onclick="limpiarHistorial()" data-icon="trash">
+            <span>LIMPIAR TODO EL HISTORIAL</span>
         </button>
     </div>
 
@@ -1092,6 +1179,41 @@
 
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <script>
+        // set de iconos SVG (Feather-style). se inyectan en [data-icon="nombre"] al cargar
+        const ICONS = {
+            camera: '<svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            video: '<svg class="icon" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+            image: '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+            save: '<svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+            trash: '<svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+            sliders: '<svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
+            dollar: '<svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+            close: '<svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+            refresh: '<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+            target: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+            history: '<svg class="icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><line x1="12" y1="7" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>',
+            download: '<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+            stop: '<svg class="icon" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>',
+            eye: '<svg class="icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+            search: '<svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+            check: '<svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+            warn: '<svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            error: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+            lock: '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+            cameraOff: '<svg class="icon" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"/></svg>',
+            pause: '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+        };
+
+        function inyectarIconos(scope) {
+            (scope || document).querySelectorAll('[data-icon]').forEach(el => {
+                const name = el.dataset.icon;
+                if (!ICONS[name] || el.dataset.iconDone === '1') return;
+                el.insertAdjacentHTML('afterbegin', ICONS[name]);
+                el.dataset.iconDone = '1';
+            });
+        }
+
+        // orden EXACTO con el que se entreno el modelo, no tocar
         const CLASS_NAMES = ['100', '1000', '10000', '100000', '200', '2000', '20000', '50', '500', '5000', '50000'];
         
         const VALORES = {
@@ -1101,8 +1223,8 @@
         };
 
         let CONF_THRESHOLD = 0.35;
-        const IOU_THRESHOLD = 0.4;
-        let INPUT_SIZE = 640;
+        const IOU_THRESHOLD = 0.4; // overlap maximo entre cajas antes de descartar duplicado
+        let INPUT_SIZE = 640;      // el modelo espera 640x640
 
         let video, canvas, ctx, capturedImage;
         let stream = null;
@@ -1175,7 +1297,9 @@
         let toastTimer = null;
         function mostrarToast(mensaje, tipo) {
             const toast = document.getElementById('toast');
-            toast.textContent = mensaje;
+            const iconName = tipo === 'error' ? 'error' : tipo === 'warn' ? 'warn' : 'check';
+            const iconSvg = ICONS[iconName] || '';
+            toast.innerHTML = iconSvg + '<span>' + mensaje + '</span>';
             toast.className = 'toast show' + (tipo ? ' ' + tipo : '');
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => {
@@ -1201,13 +1325,16 @@
         }
 
         window.onload = async function() {
+            inyectarIconos();
+
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
             capturedImage = document.getElementById('capturedImage');
-            
+
             cargarHistorial();
             actualizarOverlayDeteccion();
+            // si el usuario ya toco el slider antes, respetamos su valor en vez del default por dispositivo
             const hayConfGuardada = localStorage.getItem('conf_threshold') !== null;
 
             const status = document.getElementById('status');
@@ -1215,16 +1342,21 @@
             const btnCapture = document.getElementById('btnCapture');
             const modeIndicator = document.getElementById('modeIndicator');
 
+            // en movil hacemos captura manual (es muy pesado correr inferencia continua)
+            // en PC corremos deteccion automatica cada ~800ms
             esMobil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             if (esMobil) {
-                console.log('📱 Modo móvil - Detección por captura');
+                console.log('Modo movil - Deteccion por captura');
                 INPUT_SIZE = 640;
                 if (!hayConfGuardada) CONF_THRESHOLD = 0.30;
-                
+
                 btnCapture.style.display = 'flex';
-                modeIndicator.style.display = 'block';
-                modeIndicator.textContent = '📸 MODO CAPTURA';
+                modeIndicator.style.display = 'flex';
+                modeIndicator.dataset.icon = 'camera';
+                modeIndicator.dataset.iconDone = '';
+                modeIndicator.innerHTML = '<span>MODO CAPTURA</span>';
+                inyectarIconos(modeIndicator.parentElement);
 
                 try {
                     const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -1234,23 +1366,26 @@
                     camarasDisponibles = devices.filter(d => d.kind === 'videoinput');
 
                     if (camarasDisponibles.length >= 1) {
-                        btnSwitchCamera.style.display = 'block';
+                        btnSwitchCamera.style.display = 'flex';
                     }
                 } catch (error) {
-                    console.warn('⚠️ Error detectando cámaras:', error);
-                    btnSwitchCamera.style.display = 'block';
+                    console.warn('Error detectando camaras:', error);
+                    btnSwitchCamera.style.display = 'flex';
                 }
             } else {
-                console.log('💻 Modo PC - Detección automática continua');
+                console.log('Modo PC - Deteccion automatica continua');
                 INPUT_SIZE = 640;
                 if (!hayConfGuardada) CONF_THRESHOLD = 0.40;
-                
+
                 btnCapture.style.display = 'none';
-                modeIndicator.style.display = 'block';
+                modeIndicator.style.display = 'flex';
                 modeIndicator.style.background = 'rgba(0, 255, 136, 0.2)';
                 modeIndicator.style.borderColor = 'rgba(0, 255, 136, 0.5)';
                 modeIndicator.style.color = '#00ff88';
-                modeIndicator.textContent = '🤖 DETECCIÓN AUTOMÁTICA';
+                modeIndicator.dataset.icon = 'eye';
+                modeIndicator.dataset.iconDone = '';
+                modeIndicator.innerHTML = '<span>DETECCIÓN AUTOMÁTICA</span>';
+                inyectarIconos(modeIndicator.parentElement);
             }
 
             cargarPreferencias();
@@ -1261,24 +1396,24 @@
             try {
                 spinner.classList.add('active');
                 spinnerText.textContent = 'CARGANDO MODELO...';
-                status.textContent = '⏳ Cargando modelo IA...';
+                status.textContent = 'Cargando modelo IA...';
                 session = await ort.InferenceSession.create('models/best.onnx');
-                console.log('✅ MODELO CARGADO');
-                status.textContent = '✅ Listo - Presiona INICIAR';
+                console.log('MODELO CARGADO');
+                status.textContent = 'Listo - Presiona INICIAR';
                 spinner.classList.remove('active');
             } catch (error) {
-                console.error('❌ ERROR cargando modelo:', error);
-                status.textContent = '⚠️ Modelo no encontrado';
+                console.error('ERROR cargando modelo:', error);
+                status.textContent = 'Modelo no encontrado';
                 spinnerText.textContent = 'MODELO NO DISPONIBLE';
                 spinner.querySelector('.spinner-ring').style.borderTopColor = '#ff6b6b';
                 spinner.querySelector('.spinner-ring').style.animation = 'none';
-                mostrarToast('❌ No se pudo cargar el modelo', 'error');
+                mostrarToast('No se pudo cargar el modelo', 'error');
             }
         };
 
         async function iniciarCamara() {
             if (!session) {
-                alert('⚠️ Modelo no cargado');
+                mostrarToast('Modelo no cargado', 'warn');
                 return;
             }
 
@@ -1288,9 +1423,10 @@
             }
 
             try {
-                document.getElementById('status').textContent = '⏳ Iniciando cámara...';
+                document.getElementById('status').textContent = 'Iniciando cámara...';
                 document.getElementById('btnStart').disabled = true;
 
+                // ideal en vez de exact para que no truene si la camara no soporta full HD
                 const constraints = {
                     video: {
                         facingMode: { ideal: 'environment' },
@@ -1316,38 +1452,42 @@
                     camaraActiva = true;
                     
                     if (esMobil) {
-                        document.getElementById('status').textContent = '✅ Cámara lista - Presiona 📸 para capturar';
+                        document.getElementById('status').textContent = 'Cámara lista - Presiona el botón para capturar';
                         document.getElementById('btnCapture').style.display = 'flex';
                     } else {
-                        document.getElementById('status').textContent = '✅ Detectando automáticamente...';
+                        document.getElementById('status').textContent = 'Detectando automáticamente...';
                         deteccionActiva = true;
                         detectarContinuo();
                     }
-                    
-                    document.getElementById('btnStart').textContent = '🛑 DETENER CÁMARA';
-                    document.getElementById('btnStart').className = 'control-button btn-clear-current';
-                    document.getElementById('btnStart').disabled = false;
+
+                    const btnStart = document.getElementById('btnStart');
+                    btnStart.dataset.icon = 'stop';
+                    btnStart.dataset.iconDone = '';
+                    btnStart.innerHTML = '<span>DETENER CÁMARA</span>';
+                    btnStart.className = 'control-button btn-clear-current';
+                    btnStart.disabled = false;
+                    inyectarIconos();
                 };
 
             } catch (error) {
-                console.error('❌ Error cámara:', error);
+                console.error('Error cámara:', error);
                 const status = document.getElementById('status');
 
                 if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                    status.textContent = '🔒 Permiso denegado. Habilita la cámara en ajustes del navegador';
-                    mostrarToast('🔒 Habilita la cámara en ajustes del navegador', 'error');
+                    status.textContent = 'Permiso denegado. Habilita la cámara en ajustes del navegador';
+                    mostrarToast('Habilita la cámara en ajustes del navegador', 'error');
                 } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                    status.textContent = '📷 No se encontró ninguna cámara';
-                    mostrarToast('📷 No hay cámara disponible', 'error');
+                    status.textContent = 'No se encontró ninguna cámara';
+                    mostrarToast('No hay cámara disponible', 'error');
                 } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                    status.textContent = '⚠️ Cámara en uso por otra app';
-                    mostrarToast('⚠️ Cierra otras apps que usen la cámara', 'error');
+                    status.textContent = 'Cámara en uso por otra app';
+                    mostrarToast('Cierra otras apps que usen la cámara', 'error');
                 } else if (error.name === 'OverconstrainedError') {
-                    status.textContent = '⚠️ Cámara no soporta esta configuración';
-                    mostrarToast('⚠️ Configuración de cámara no soportada', 'error');
+                    status.textContent = 'Cámara no soporta esta configuración';
+                    mostrarToast('Configuración de cámara no soportada', 'error');
                 } else {
-                    status.textContent = '❌ Error con cámara: ' + (error.message || error.name);
-                    mostrarToast('❌ Error al iniciar cámara', 'error');
+                    status.textContent = 'Error con cámara: ' + (error.message || error.name);
+                    mostrarToast('Error al iniciar cámara', 'error');
                 }
 
                 document.getElementById('btnStart').disabled = false;
@@ -1356,23 +1496,23 @@
 
         async function cambiarCamara() {
             if (camarasDisponibles.length <= 1) {
-                alert('⚠️ Solo hay una cámara disponible');
+                mostrarToast('Solo hay una cámara disponible', 'warn');
                 return;
             }
 
             camaraActualIndex = (camaraActualIndex + 1) % camarasDisponibles.length;
-            
+
             const cameraActual = camarasDisponibles[camaraActualIndex];
             const nombreCamara = cameraActual.label || `Cámara ${camaraActualIndex + 1}`;
-            console.log('🔄 Cambiando a:', nombreCamara);
-            
+            console.log('Cambiando a:', nombreCamara);
+
             if (camaraActiva) {
                 detenerCamara();
                 setTimeout(() => {
                     iniciarCamara();
                 }, 500);
             } else {
-                document.getElementById('status').textContent = `📹 ${nombreCamara} seleccionada`;
+                document.getElementById('status').textContent = `${nombreCamara} seleccionada`;
             }
         }
 
@@ -1387,10 +1527,14 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 capturedImage.style.display = 'none';
                 
-                document.getElementById('status').textContent = '⏸️ Detenido';
-                document.getElementById('btnStart').textContent = '🎥 INICIAR CÁMARA';
-                document.getElementById('btnStart').className = 'control-button btn-camera';
+                document.getElementById('status').textContent = 'Detenido';
+                const btnStart = document.getElementById('btnStart');
+                btnStart.dataset.icon = 'video';
+                btnStart.dataset.iconDone = '';
+                btnStart.innerHTML = '<span>INICIAR CÁMARA</span>';
+                btnStart.className = 'control-button btn-camera';
                 document.getElementById('btnCapture').style.display = 'none';
+                inyectarIconos();
             }
         }
 
@@ -1412,6 +1556,7 @@
             }
 
             procesando = false;
+            // 800ms da espacio al GC y mantiene la UI responsiva
             setTimeout(detectarContinuo, 800);
         }
 
@@ -1421,9 +1566,10 @@
             procesando = true;
             const btnCapture = document.getElementById('btnCapture');
             btnCapture.classList.add('processing');
-            btnCapture.textContent = '⏳';
             btnCapture.disabled = true;
 
+            // trigger del flash: hay que forzar reflow leyendo offsetWidth
+            // sino el navegador batchea y no se reinicia la animacion
             const flash = document.getElementById('captureFlash');
             flash.classList.remove('active');
             void flash.offsetWidth;
@@ -1431,16 +1577,17 @@
 
             video.pause();
 
-            document.getElementById('status').textContent = '🔎 Analizando...';
+            document.getElementById('status').textContent = 'Analizando...';
 
             requestAnimationFrame(async () => {
                 try {
                     const startTime = performance.now();
                     
+                    // limitamos a 1280px porque celulares con camara de 4k tronaban memoria
                     const maxDimension = 1280;
                     let drawWidth = canvas.width;
                     let drawHeight = canvas.height;
-                    
+
                     if (canvas.width > maxDimension || canvas.height > maxDimension) {
                         const scale = maxDimension / Math.max(canvas.width, canvas.height);
                         drawWidth = canvas.width * scale;
@@ -1457,22 +1604,21 @@
                     const deteccionesFiltradas = await ejecutarDeteccionSobre(video);
 
                     const endTime = performance.now();
-                    console.log(`⏱️ Tiempo: ${(endTime - startTime).toFixed(0)}ms | Detecciones: ${deteccionesFiltradas.length}`);
+                    console.log(`Tiempo: ${(endTime - startTime).toFixed(0)}ms | Detecciones: ${deteccionesFiltradas.length}`);
 
                     actualizarDeteccionesActuales(deteccionesFiltradas);
 
                     document.getElementById('status').textContent =
                         deteccionesFiltradas.length > 0 ?
-                        `✅ ${deteccionesFiltradas.length} billetes detectados` :
-                        '⚠️ No se detectaron billetes';
-                    
+                        `${deteccionesFiltradas.length} billetes detectados` :
+                        'No se detectaron billetes';
+
                 } catch (error) {
                     console.error('Error detección:', error);
-                    document.getElementById('status').textContent = '❌ Error al procesar';
+                    document.getElementById('status').textContent = 'Error al procesar';
                 }
 
                 btnCapture.classList.remove('processing');
-                btnCapture.textContent = '📸';
                 btnCapture.disabled = false;
                 procesando = false;
             });
@@ -1503,6 +1649,7 @@
             }
         }
 
+        // canvas reusable para no andar creando uno nuevo en cada frame (en PC se llama cada 800ms)
         let _preprocessCanvas = null;
         let _preprocessCtx = null;
 
@@ -1524,6 +1671,8 @@
             const imageData = _preprocessCtx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
             const { data } = imageData;
 
+            // pasamos de RGBA intercalado (HWC) a planar RGB (CHW) que es lo que espera el modelo
+            // R todo junto, despues G, despues B. normalizado a [0,1]
             const input = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
             const pixelCount = INPUT_SIZE * INPUT_SIZE;
 
@@ -1538,6 +1687,9 @@
         }
 
 
+        // el output de yolo viene como [4+numClases, numPredictions] traspuesto:
+        // primero todos los xCenter, despues todos los yCenter, etc.
+        // por eso los indices se ven raros (numPredictions * offset + i)
         function postprocesarResultados(outputData, imgWidth, imgHeight) {
             const detecciones = [];
             const numClases = CLASS_NAMES.length;
@@ -1579,18 +1731,21 @@
             return detecciones;
         }
 
+        // sin esto un mismo billete sale detectado 3-4 veces con cajas superpuestas
+        // ordenamos por confianza y descartamos las cajas que se traslapan demasiado con una mejor
         function nonMaxSuppression(detecciones, iouThreshold) {
             detecciones.sort((a, b) => b.conf - a.conf);
             const resultado = [];
             const suppressed = new Array(detecciones.length).fill(false);
-            
+
             for (let i = 0; i < detecciones.length; i++) {
                 if (suppressed[i]) continue;
                 resultado.push(detecciones[i]);
-                
+
                 for (let j = i + 1; j < detecciones.length; j++) {
                     if (suppressed[j]) continue;
-                    
+
+                    // solo suprime si es la misma clase (no queremos borrar un $50 que esta encima de un $100)
                     if (detecciones[i].class === detecciones[j].class) {
                         const iou = calcularIoU(detecciones[i].bbox, detecciones[j].bbox);
                         if (iou > iouThreshold) {
@@ -1599,7 +1754,7 @@
                     }
                 }
             }
-            
+
             return resultado;
         }
 
@@ -1642,7 +1797,7 @@
 
         function guardarDeteccionActual() {
             if (Object.keys(deteccionesActuales).length === 0) {
-                mostrarToast('⚠️ No hay detecciones para guardar', 'warn');
+                mostrarToast('No hay detecciones para guardar', 'warn');
                 return;
             }
 
@@ -1664,8 +1819,8 @@
             const overlay = document.querySelector('.detection-overlay');
             overlay.style.borderTop = '3px solid #00ff88';
 
-            mostrarToast(`✅ Guardado $${totalActual.toLocaleString()}`);
-            document.getElementById('status').textContent = '✅ Guardado en historial';
+            mostrarToast(`Guardado $${totalActual.toLocaleString()}`);
+            document.getElementById('status').textContent = 'Guardado en historial';
 
             setTimeout(() => {
                 overlay.style.borderTop = 'none';
@@ -1679,9 +1834,9 @@
                 }
                 
                 if (esMobil) {
-                    document.getElementById('status').textContent = '✅ Listo para siguiente captura';
+                    document.getElementById('status').textContent = 'Listo para siguiente captura';
                 } else {
-                    document.getElementById('status').textContent = '✅ Guardado - Detectando...';
+                    document.getElementById('status').textContent = 'Guardado - Detectando...';
                 }
             }, 500);
         }
@@ -1703,9 +1858,9 @@
             }
 
             if (esMobil) {
-                document.getElementById('status').textContent = '🗑️ Limpiado - Lista para nueva captura';
+                document.getElementById('status').textContent = 'Limpiado - Lista para nueva captura';
             } else {
-                document.getElementById('status').textContent = '🗑️ Detección limpiada';
+                document.getElementById('status').textContent = 'Detección limpiada';
             }
         }
 
@@ -1715,7 +1870,7 @@
             historial = historial.filter(item => item.id !== id);
             localStorage.setItem('historial_billetes', JSON.stringify(historial));
             actualizarHistorialUI();
-            mostrarToast('🗑️ Registro eliminado');
+            mostrarToast('Registro eliminado');
         }
 
         let filtroHistorial = '';
@@ -1760,9 +1915,7 @@
                     <div class="historial-item">
                         <div class="historial-item-header">
                             <div class="historial-item-valor">$${reg.total.toLocaleString()}</div>
-                            <button class="btn-eliminar" onclick="eliminarDelHistorial(${reg.id})">
-                                🗑️
-                            </button>
+                            <button class="btn-eliminar" onclick="eliminarDelHistorial(${reg.id})" aria-label="Eliminar">${ICONS.trash}</button>
                         </div>
                         <div class="historial-item-desglose">${desglose}</div>
                         <div class="historial-item-fecha">${reg.timestamp}</div>
@@ -1780,7 +1933,7 @@
 
         function limpiarHistorial() {
             if (historial.length === 0) {
-                mostrarToast('⚠️ El historial ya está vacío', 'warn');
+                mostrarToast('El historial ya está vacío', 'warn');
                 return;
             }
 
@@ -1788,7 +1941,7 @@
                 historial = [];
                 localStorage.removeItem('historial_billetes');
                 actualizarHistorialUI();
-                mostrarToast('🗑️ Historial limpiado');
+                mostrarToast('Historial limpiado');
             }
         }
 
@@ -1809,7 +1962,7 @@
 
         function exportarHistorial() {
             if (historial.length === 0) {
-                mostrarToast('⚠️ Nada que exportar', 'warn');
+                mostrarToast('Nada que exportar', 'warn');
                 return;
             }
 
@@ -1831,12 +1984,12 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            mostrarToast('📤 Historial exportado');
+            mostrarToast('Historial exportado');
         }
 
         function probarConImagen() {
             if (!session) {
-                alert('⚠️ Modelo no cargado');
+                mostrarToast('Modelo no cargado', 'warn');
                 return;
             }
             document.getElementById('imageInput').click();
@@ -1846,7 +1999,7 @@
             if (!input.files || !input.files[0]) return;
             
             const file = input.files[0];
-            console.log('📸 Procesando imagen:', file.name);
+            console.log('Procesando imagen:', file.name);
             
             const img = new Image();
             img.onload = async function() {
@@ -1861,20 +2014,20 @@
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
                 try {
-                    document.getElementById('status').textContent = '🔎 Analizando imagen...';
+                    document.getElementById('status').textContent = 'Analizando imagen...';
 
                     const deteccionesFiltradas = await ejecutarDeteccionSobre(img);
                     actualizarDeteccionesActuales(deteccionesFiltradas);
 
                     document.getElementById('status').textContent =
                         deteccionesFiltradas.length > 0 ?
-                        `✅ ${deteccionesFiltradas.length} billetes detectados` :
-                        '⚠️ No se detectaron billetes';
+                        `${deteccionesFiltradas.length} billetes detectados` :
+                        'No se detectaron billetes';
 
                 } catch (error) {
-                    console.error('❌ Error procesando imagen:', error);
-                    document.getElementById('status').textContent = '❌ Error al procesar';
-                    mostrarToast('❌ Error al procesar imagen', 'error');
+                    console.error('Error procesando imagen:', error);
+                    document.getElementById('status').textContent = 'Error al procesar';
+                    mostrarToast('Error al procesar imagen', 'error');
                 }
             };
             
