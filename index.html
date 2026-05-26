@@ -729,6 +729,103 @@
             }
         }
 
+        .capture-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .capture-flash.active {
+            animation: flashAnim 0.3s ease-out;
+        }
+
+        @keyframes flashAnim {
+            0% { opacity: 0; }
+            20% { opacity: 0.85; }
+            100% { opacity: 0; }
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            pointer-events: none;
+        }
+
+        .loading-spinner.active {
+            display: flex;
+        }
+
+        .spinner-ring {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 255, 136, 0.2);
+            border-top-color: #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .spinner-text {
+            color: #00ff88;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .historial-filter {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .historial-filter input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .historial-filter input::placeholder {
+            color: #555;
+        }
+
+        .historial-filter input:focus {
+            border-color: rgba(0, 255, 136, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .historial-filter::before {
+            content: '🔍';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -863,6 +960,13 @@
             <img id="capturedImage" alt="Captura">
             
             <div class="mode-indicator" id="modeIndicator">📸 MODO CAPTURA</div>
+
+            <div class="capture-flash" id="captureFlash"></div>
+
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-text" id="spinnerText">CARGANDO MODELO...</div>
+            </div>
             
             <button class="btn-capture" id="btnCapture" onclick="capturarYDetectar()">
                 📸
@@ -944,6 +1048,10 @@
         <div class="historial-header">
             <div class="historial-total" id="totalHistorial">$0</div>
             <div class="historial-label">Total Acumulado</div>
+        </div>
+
+        <div class="historial-filter">
+            <input type="text" id="historialFilter" placeholder="Buscar por valor, fecha o billete..." oninput="filtrarHistorial(this.value)">
         </div>
 
         <div class="stats-panel" id="statsPanel">
@@ -1047,6 +1155,21 @@
         function actualizarConf(value) {
             CONF_THRESHOLD = value / 100;
             document.getElementById('confValue').textContent = value + '%';
+            try { localStorage.setItem('conf_threshold', value); } catch (e) {}
+        }
+
+        function cargarPreferencias() {
+            try {
+                const conf = localStorage.getItem('conf_threshold');
+                if (conf) {
+                    const slider = document.getElementById('confSlider');
+                    if (slider) {
+                        slider.value = conf;
+                        CONF_THRESHOLD = conf / 100;
+                        document.getElementById('confValue').textContent = conf + '%';
+                    }
+                }
+            } catch (e) {}
         }
 
         let toastTimer = null;
@@ -1085,6 +1208,7 @@
             
             cargarHistorial();
             actualizarOverlayDeteccion();
+            const hayConfGuardada = localStorage.getItem('conf_threshold') !== null;
 
             const status = document.getElementById('status');
             const btnSwitchCamera = document.getElementById('btnSwitchCamera');
@@ -1096,7 +1220,7 @@
             if (esMobil) {
                 console.log('📱 Modo móvil - Detección por captura');
                 INPUT_SIZE = 640;
-                CONF_THRESHOLD = 0.30;
+                if (!hayConfGuardada) CONF_THRESHOLD = 0.30;
                 
                 btnCapture.style.display = 'flex';
                 modeIndicator.style.display = 'block';
@@ -1119,7 +1243,7 @@
             } else {
                 console.log('💻 Modo PC - Detección automática continua');
                 INPUT_SIZE = 640;
-                CONF_THRESHOLD = 0.40;
+                if (!hayConfGuardada) CONF_THRESHOLD = 0.40;
                 
                 btnCapture.style.display = 'none';
                 modeIndicator.style.display = 'block';
@@ -1129,14 +1253,26 @@
                 modeIndicator.textContent = '🤖 DETECCIÓN AUTOMÁTICA';
             }
 
+            cargarPreferencias();
+
+            const spinner = document.getElementById('loadingSpinner');
+            const spinnerText = document.getElementById('spinnerText');
+
             try {
-                status.textContent = 'Cargando modelo...';
+                spinner.classList.add('active');
+                spinnerText.textContent = 'CARGANDO MODELO...';
+                status.textContent = '⏳ Cargando modelo IA...';
                 session = await ort.InferenceSession.create('models/best.onnx');
                 console.log('✅ MODELO CARGADO');
                 status.textContent = '✅ Listo - Presiona INICIAR';
+                spinner.classList.remove('active');
             } catch (error) {
                 console.error('❌ ERROR cargando modelo:', error);
                 status.textContent = '⚠️ Modelo no encontrado';
+                spinnerText.textContent = 'MODELO NO DISPONIBLE';
+                spinner.querySelector('.spinner-ring').style.borderTopColor = '#ff6b6b';
+                spinner.querySelector('.spinner-ring').style.animation = 'none';
+                mostrarToast('❌ No se pudo cargar el modelo', 'error');
             }
         };
 
@@ -1195,7 +1331,25 @@
 
             } catch (error) {
                 console.error('❌ Error cámara:', error);
-                document.getElementById('status').textContent = '❌ Error con cámara';
+                const status = document.getElementById('status');
+
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    status.textContent = '🔒 Permiso denegado. Habilita la cámara en ajustes del navegador';
+                    mostrarToast('🔒 Habilita la cámara en ajustes del navegador', 'error');
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    status.textContent = '📷 No se encontró ninguna cámara';
+                    mostrarToast('📷 No hay cámara disponible', 'error');
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    status.textContent = '⚠️ Cámara en uso por otra app';
+                    mostrarToast('⚠️ Cierra otras apps que usen la cámara', 'error');
+                } else if (error.name === 'OverconstrainedError') {
+                    status.textContent = '⚠️ Cámara no soporta esta configuración';
+                    mostrarToast('⚠️ Configuración de cámara no soportada', 'error');
+                } else {
+                    status.textContent = '❌ Error con cámara: ' + (error.message || error.name);
+                    mostrarToast('❌ Error al iniciar cámara', 'error');
+                }
+
                 document.getElementById('btnStart').disabled = false;
             }
         }
@@ -1270,6 +1424,11 @@
             btnCapture.textContent = '⏳';
             btnCapture.disabled = true;
 
+            const flash = document.getElementById('captureFlash');
+            flash.classList.remove('active');
+            void flash.offsetWidth;
+            flash.classList.add('active');
+
             video.pause();
 
             document.getElementById('status').textContent = '🔎 Analizando...';
@@ -1323,7 +1482,7 @@
             const totalActual = Object.entries(deteccionesActuales)
                 .reduce((sum, [billete, cantidad]) => sum + (VALORES[billete] * cantidad), 0);
             
-            document.getElementById('detectionAmount').textContent = `${totalActual.toLocaleString()}`;
+            document.getElementById('detectionAmount').textContent = `$${totalActual.toLocaleString()}`;
             
             const itemsDiv = document.getElementById('detectionItems');
             const btnGuardar = document.getElementById('btnGuardarOverlay');
@@ -1552,38 +1711,55 @@
 
         function eliminarDelHistorial(id) {
             if (!confirm('¿Eliminar este registro?')) return;
-            
+
             historial = historial.filter(item => item.id !== id);
             localStorage.setItem('historial_billetes', JSON.stringify(historial));
             actualizarHistorialUI();
+            mostrarToast('🗑️ Registro eliminado');
         }
 
-        function actualizarHistorialUI() {
-            const totalHistorial = calcularTotalHistorial();
-            document.getElementById('totalHistorial').textContent = `${totalHistorial.toLocaleString()}`;
+        let filtroHistorial = '';
 
-            actualizarEstadisticas(totalHistorial);
+        function filtrarHistorial(valor) {
+            filtroHistorial = valor.toLowerCase().trim();
+            renderHistorialList();
+        }
 
+        function renderHistorialList() {
             const list = document.getElementById('historialList');
             const btnExportar = document.getElementById('btnExportar');
+
+            const registros = filtroHistorial
+                ? historial.filter(reg => {
+                    if (String(reg.total).includes(filtroHistorial)) return true;
+                    if (reg.timestamp.toLowerCase().includes(filtroHistorial)) return true;
+                    return Object.keys(reg.desglose).some(b => b.includes(filtroHistorial));
+                })
+                : historial;
 
             if (historial.length === 0) {
                 list.innerHTML = '<div class="empty-message">No hay registros guardados</div>';
                 if (btnExportar) btnExportar.disabled = true;
                 return;
             }
+
             if (btnExportar) btnExportar.disabled = false;
 
+            if (registros.length === 0) {
+                list.innerHTML = '<div class="empty-message">Sin resultados para "' + filtroHistorial + '"</div>';
+                return;
+            }
+
             let html = '';
-            for (let reg of historial) {
+            for (let reg of registros) {
                 const desglose = Object.entries(reg.desglose)
                     .map(([b, c]) => `${c}x${b}`)
                     .join(', ');
-                
+
                 html += `
                     <div class="historial-item">
                         <div class="historial-item-header">
-                            <div class="historial-item-valor">${reg.total.toLocaleString()}</div>
+                            <div class="historial-item-valor">$${reg.total.toLocaleString()}</div>
                             <button class="btn-eliminar" onclick="eliminarDelHistorial(${reg.id})">
                                 🗑️
                             </button>
@@ -1593,6 +1769,13 @@
                     </div>`;
             }
             list.innerHTML = html;
+        }
+
+        function actualizarHistorialUI() {
+            const totalHistorial = calcularTotalHistorial();
+            document.getElementById('totalHistorial').textContent = `$${totalHistorial.toLocaleString()}`;
+            actualizarEstadisticas(totalHistorial);
+            renderHistorialList();
         }
 
         function limpiarHistorial() {
