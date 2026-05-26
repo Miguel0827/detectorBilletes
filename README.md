@@ -70,7 +70,6 @@ Modelo YOLOv11 entrenado en formato PyTorch (.pt) y convertido a ONNX para ejecu
 
 | Nombre | Código |
 |--------|--------|
-
 | **Miguel Ángel Murillo de los Ríos** | 2220232041 |
 | **Jonathan David Moya Patarroyo** | 2220222039 |
 
